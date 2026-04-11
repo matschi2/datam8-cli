@@ -74,19 +74,16 @@ def config(request: pytest.FixtureRequest) -> DataM8TestConfig:
 @fixture
 def model_lazy(config: DataM8TestConfig) -> datam8_model.Model:
     "Initialized Model object."
-
-    datam8_config.solution_folder_path = config.solution_file_path.parent
-    datam8_config.solution_path = config.solution_file_path
-    model = asyncio.run(parse_full_solution_async(config.solution_file_path))
+    datam8_config.set_solution(config.solution_file_path)
+    model = asyncio.run(parse_full_solution_async(datam8_config.solution_path))
     return model
 
 
 @fixture
 def model(config: DataM8TestConfig) -> datam8_model.Model:
     "Initialized a lazy Model object."
-
-    datam8_config.solution_folder_path = config.solution_file_path.parent
-    model = asyncio.run(parse_full_solution_async(config.solution_file_path))
+    datam8_config.set_solution(config.solution_file_path)
+    model = asyncio.run(parse_full_solution_async(datam8_config.solution_path))
 
     model.resolve()
 

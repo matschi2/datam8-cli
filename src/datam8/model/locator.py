@@ -25,6 +25,8 @@ from datam8 import errors, utils
 from datam8_model import base as b
 from datam8_model import model as m
 
+type LocatorOrString = Locator | str
+
 
 def _ensure_locator(locator: str | Locator) -> Locator:
     if isinstance(locator, str):
@@ -41,9 +43,9 @@ class Locator(m.Locator):
 
     def __eq__(self, other: object) -> bool:
         if isinstance(other, str):
-            return self.__str__() == other
+            return str(self) == other
 
-        elif not isinstance(other, Locator):
+        if not isinstance(other, Locator):
             raise utils.create_error(
                 TypeError(f"Cannot compare object of type {type(object)} with Locator")
             )
@@ -180,6 +182,17 @@ class Locator(m.Locator):
         while current.parent:
             yield current.parent
             current = current.parent
+
+    def without_type(self) -> str:
+        """
+        Returns the locator as a string without the type
+
+        Examples
+        --------
+        >>> Locator.from_path("modelEntities/test").without_type()
+        "test"
+        """
+        return f"{'/'.join(self.folders)}/{self.entityName}"
 
 
 ROOT_LOCATOR = Locator(entityType="/", folders=[], entityName=None)

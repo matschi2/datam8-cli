@@ -1,12 +1,12 @@
-# ORAYLIS DataM8 Generator
+# ORAYLIS DataM8 CLI
 
-`datam8-generator` is the canonical DataM8 v2 backend:
+> [!IMPORTANT]
+> The main branch may contain active development, which could contain a broken solution.
+> Always use [releases] or their respective [version tags] or commit hashes directly when
+> referencing the schema.
 
-- `datam8` CLI
-- `datam8 serve` FastAPI server
-- synchronous HTTP execution
-
-Neon launches the backend over embedded Python (`python -m datam8 serve`) and communicates via localhost HTTP.
+[releases]: https://github.com/oraylis/datam8-cli/releases
+[version tags]: https://github.com/oraylis/datam8-cli/tags
 
 ## Issues
 
@@ -16,10 +16,6 @@ Issues are tracked centrally in the DataM8 repository:
 
 ## Key docs
 
-- Backend contract (canonical): `docs/backend-contract.md`
-- Server startup/auth details: `docs/server.md`
-- Connector plugin details: `docs/connectors.md`
-- Agent guidance: `AGENTS.md`
 - Central DataM8 docs: https://github.com/oraylis/datam8/tree/main/docs
 
 ## Local development
@@ -28,6 +24,7 @@ Issues are tracked centrally in the DataM8 repository:
 
 - Python 3.12+
 - `uv` (https://docs.astral.sh/uv/getting-started/installation/)
+    - setup local venv with `uv sync --all-extras`
 
 ### Clone
 
@@ -48,31 +45,6 @@ uv run datam8 validate --help
 uv run datam8 generate --help
 ```
 
-### CLI arguments (quick reference)
-
-The legacy `dm8gen --action ...` argument model is no longer used.
-The current CLI uses command groups under `datam8`.
-
-`datam8 serve`:
-- `--token` (required): bearer token for non-health endpoints.
-- `--host` (default `127.0.0.1`), `--port` (default `0`).
-- `--solution-path` / `--solution` / `-s` (optional).
-- `--openapi` (optional), `--log-level` (optional).
-
-`datam8 validate`:
-- `--solution-path` / `--solution` / `-s` (required for execution).
-- `--log-level` / `-l` (optional).
-
-`datam8 generate`:
-- `TARGET` argument (optional, defaults from solution/config).
-- `--solution-path` / `--solution` / `-s` (required for execution).
-- `--clean-output` / `-c` (optional).
-- `--payload` / `-p` (optional, repeatable).
-- `--all` (optional), `--lazy` (optional), `--log-level` / `-l` (optional).
-
-For additional command groups (`solution`, `model`, `index`, `plugin`, `secret`, ...),
-use `uv run datam8 <group> --help`.
-
 ### Build wheel
 
 ```sh
@@ -83,10 +55,10 @@ uv build
 
 Testing requires a path to a DataM8 solution.
 You can pass it via `--solution-path` or environment variable (`DATAM8_SOLUTION_PATH`).
-See `tests/README.md` for details.
+See `tests/README.md` for more details.
 
 ```sh
-uv sync
+uv sync --all-extras
 uv run pytest --solution-path "<path-to-solution.dm8s>"
 ```
 

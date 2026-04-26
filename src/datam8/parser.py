@@ -30,7 +30,7 @@ from pydantic import ValidationError
 
 from datam8 import config, errors, logging
 from datam8.model import (
-    EntityDict,
+    EntityRepository,
     EntityWrapper,
     Locator,
     Model,
@@ -38,6 +38,8 @@ from datam8.model import (
     wrap_base_entity,
 )
 from datam8_model import base as b
+from datam8_model import data_product as dp
+from datam8_model import folder as f
 from datam8_model import model as m
 from datam8_model import solution as s
 
@@ -56,7 +58,7 @@ async def parse_full_solution_async(solution_path: pathlib.Path, /) -> Model:
         path to the solution file (.dm8s)
     lazy : `bool`
         if lazy loading is enabled model entities will not be loaded, which
-        needs to be handeled afterwards on the fly.
+        needs to be handled afterwards on the fly.
 
     Returns
     -------
@@ -77,7 +79,7 @@ async def parse_full_solution_async(solution_path: pathlib.Path, /) -> Model:
 
     model = Model(
         solution,
-        modelEntities=model_entities,
+        modelEntities=model_entities, # type: ignore[ty:ignore-argument-type]
         **base_entities,
     )
 
@@ -109,8 +111,10 @@ def __parse_model_entities(
     path: pathlib.Path,
     *,
     executor: futures.ThreadPoolExecutor | None = None,
-) -> EntityDict[m.ModelEntity]:
-    model_entities: EntityDict[m.ModelEntity] = {}
+) -> EntityRepository[m.ModelEntity]:
+    model_entities: EntityRepository[m.ModelEntity] = EntityRepository(
+        entity_type=b.EntityType.MODEL_ENTITIES.value
+    )
     parse_errors: dict[pathlib.Path, ValidationError] = {}
 
     logger.debug(f"Scanning {path} for model entities")
@@ -138,10 +142,13 @@ def __parse_model_entities(
 
         clean_path = rel_path.as_posix().removeprefix(path.as_posix())
         locator = Locator.from_path(f"{b.EntityType.MODEL_ENTITIES.value}{clean_path}")
-        model_entities[locator] = EntityWrapper[m.ModelEntity](
-            source_file=config.solution_folder_path / rel_path,
-            locator=locator,
-            entity=model_entity_or_err,
+        model_entities.add(
+            locator,
+            EntityWrapper[m.ModelEntity](
+                source_file=config.solution_folder_path / rel_path,
+                locator=locator,
+                entity=model_entity_or_err,
+            ),
         )
 
     if executor is None:
@@ -177,7 +184,7 @@ def __parse_base_entities(
     model_path: pathlib.Path,
     *,
     executor: futures.ThreadPoolExecutor | None = None,
-) -> dict[str, EntityDict[Any]]:
+) -> dict[str, EntityRepository[Any]]:
     logger.debug(f"Scanning {base_path} for base entities")
     logger.debug(f"Scanning {model_path} for folder entities")
 
@@ -233,7 +240,10 @@ def __parse_base_entities(
         raise errors.ModelParseError(inner_exceptions=[err for err in parse_errors.values()])
 
     unpacked_entities = {
-        k.value: {wrapped_entity.locator: wrapped_entity for wrapped_entity in v}
+        k.value: EntityRepository(
+            {wrapped_entity.locator: wrapped_entity for wrapped_entity in v},
+            entity_type=k.value,
+        )
         for k, v in base_entities.items()
     }
 
@@ -264,9 +274,14 @@ def __parse_base_entity_file(
     return rel_path, (entities_type, entities)
 
 
-def __validate_folder_product_module(base_entities: dict[str, EntityDict[Any]], /) -> None:
-    data_products: EntityDict[Any] = base_entities.get(b.EntityType.DATA_PRODUCTS.value, {})
-    folders: EntityDict[Any] = base_entities.get(b.EntityType.FOLDERS.value, {})
+def __validate_folder_product_module(base_entities: dict[str, EntityRepository[Any]], /) -> None:
+    data_products: EntityRepository[dp.DataProduct] = base_entities.get(
+        b.EntityType.DATA_PRODUCTS.value,
+        EntityRepository(entity_type=b.EntityType.DATA_PRODUCTS.value),
+    )
+    folders: EntityRepository[f.Folder] = base_entities.get(
+        b.EntityType.FOLDERS.value, EntityRepository(entity_type=b.EntityType.FOLDERS.value)
+    )
 
     known_products: dict[str, set[str]] = {}
     for wrapped in data_products.values():

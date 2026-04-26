@@ -25,6 +25,7 @@ creating values, by using the following classes.
 """
 
 from dataclasses import dataclass
+from threading import Lock
 from typing import Any
 
 
@@ -35,10 +36,9 @@ class CacheEntry:
 
 
 class Cache:
-    __dict: dict[str, CacheEntry]
-
     def __init__(self) -> None:
-        self.__dict = {}
+        self.__dict: dict[str, CacheEntry] = {}
+        self.lock = Lock()
 
     def get(self, key: str) -> Any:
         """Get a value from the cache by key.
@@ -52,7 +52,9 @@ class Cache:
         ---------------
         The value matching the given key.
         """
-        return self.__dict[key].value
+        assert isinstance(key, str), "Only strings should be used as cache keys"
+        with self.lock:
+            return self.__dict[key].value
 
     def set(self, key: str, value: Any) -> Any:
         """Set the value in cache by key and return it.
@@ -68,25 +70,31 @@ class Cache:
         -------
         The newly set value.
         """
-        self.__dict[key] = CacheEntry(type=type(value), value=value)
-        return value
+        assert isinstance(key, str), "Only strings should be used as cache keys"
+        with self.lock:
+            self.__dict[key] = CacheEntry(type=type(value), value=value)
+            return value
 
     @property
     def all(self) -> dict[str, CacheEntry]:
         """Return the complete cache dictionary."""
-        return self.__dict
+        with self.lock:
+            return {k: v for k, v in self.__dict.items()}
 
     @property
     def items(self) -> dict[str, Any]:
         """Return all key-value pairs currently in the cache."""
-        return {k: v.value for k, v in self.__dict.items()}
+        with self.lock:
+            return {k: v.value for k, v in self.__dict.items()}
 
     @property
     def values(self) -> list[Any]:
         """Return all values currently in the cache."""
-        return [v.value for v in self.__dict.values()]
+        with self.lock:
+            return [v.value for v in self.__dict.values()]
 
     def __str__(self):
-        return "Cached Items: " + ", ".join(
-            [f"{k}({str(v.value)})" for k, v in self.__dict.items()]
-        )
+        with self.lock:
+            return "Cached Items: " + ", ".join(
+                [f"{k}({str(v.value)})" for k, v in self.__dict.items()]
+            )

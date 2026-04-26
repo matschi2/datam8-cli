@@ -91,8 +91,8 @@ class CasesModel:
     @parametrize(
         "function",
         [
-            "get_data_type",
-            "get_data_source",
+            "get_generator_target",
+            "resolve",
         ],
     )
     def case_model_functions(self, function):
@@ -111,6 +111,7 @@ class CasesEntityLookup:
             ("dataSourceTypes", ["SQLServer"]),
             ("dataProducts", ["Sales"]),
             ("dataModules", ["Sales/Other"]),
+            ("propertyValues", ["business_area/sales"])
         ],
     )
     def case_get_entity_dict_valid(self, input):

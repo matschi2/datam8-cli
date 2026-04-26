@@ -70,11 +70,11 @@ def get_plugin_for_data_source(data_source: ds.DataSource | str) -> plugins.Plug
     _model = get_model()
 
     if isinstance(data_source, str):
-        data_source_ = get_model().get_data_source(data_source).entity
+        data_source_ = get_model().dataSources.get(data_source).entity
     else:
         data_source_ = data_source
 
-    type_ = _model.get_data_source_type(data_source_.type).entity
+    type_ = _model.dataSourceTypes.get(data_source_.type).entity
 
     # register builtin plugin if applicable
     plugins.init_builtin_plugins(data_source_type=type_)
@@ -222,8 +222,10 @@ def create_undefined_folders(_model: model.Model, /):
     _model : `model.Model`
         A fully parsed DataM8 folder. Can be run pre or post property resolution.
     """
-    existing_folders = [w.entity.id for w in _model.folders.values()]
-    next_id = (max(existing_folders) if len(existing_folders) != 0 else 0) + 1
+    logger.debug("Create undefined folders")
+
+    existing_folder_ids = [w.entity.id for w in _model.folders.values()]
+    next_id = (max(existing_folder_ids) if len(existing_folder_ids) != 0 else 0) + 1
 
     undefined_folders: model.EntityDict[f.Folder] = {}
 
@@ -256,3 +258,5 @@ def create_undefined_folders(_model: model.Model, /):
     for loc in undefined_folders:
         if loc not in _model.folders:
             _model.folders[loc] = undefined_folders[loc]
+
+    logger.info(f"Created {len(undefined_folders)} undefined folders")

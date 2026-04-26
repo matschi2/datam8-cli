@@ -66,8 +66,10 @@ def __setup_model_for_cli(
     solution_path: opts.SolutionPath,
     log_level: opts.LogLevel,
     version: opts.Version,
+    *,
+    lazy: bool = True,
 ) -> model.Model:
-    config.lazy = True
+    config.lazy = lazy
     common.main_callback(solution_path, log_level, version)
 
     from datam8 import factory
@@ -189,9 +191,9 @@ def validate(
     version: opts.Version = False,
 ):
     """Validate solution model"""
-    _model = __setup_model_for_cli(solution_path, log_level, version)
+    _model = __setup_model_for_cli(solution_path, log_level, version, lazy=False)
 
-    typer.echo("Validation successfull")
+    typer.echo("Validation successful")
 
 
 @app.command(name="generate")
@@ -210,7 +212,7 @@ def generate_cmd(
     if generate_all:
         logger.warning("The --all option is set, but is currently ignored.")
 
-    model = __setup_model_for_cli(solution_path, log_level, version)
+    model = __setup_model_for_cli(solution_path, log_level, version, lazy=lazy)
 
     from datam8 import generate
 
@@ -222,7 +224,7 @@ def generate_cmd(
         clean_output=clean_output,
     )
 
-    typer.echo("Generation successfull")
+    typer.echo("Generation successful")
 
 
 @app.command()
@@ -244,7 +246,7 @@ def init(
         new_solution_path = new_solution_path / f"{name}.dm8s"
 
     if new_solution_path.exists():
-        typer.echo(f"Solution file aready exists at {new_solution_path}")
+        typer.echo(f"Solution file already exists at {new_solution_path}")
         raise typer.Exit(1)
 
     if len(os.listdir(new_solution_path.parent)) > 0:

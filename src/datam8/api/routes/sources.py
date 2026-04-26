@@ -143,7 +143,7 @@ async def import_for_table(data_source: str, table: str) -> list[dict[str, Any]]
 @sources_router.get("/{data_source}/usages")
 async def get_usages(data_source: str) -> MultiItemResponse[Locator]:
     model_ = factory.get_model()
-    ds = model_.get_data_source(data_source)
+    ds = model_.dataSources.get(data_source)
     entities = [
         wrapper.locator
         for wrapper in factory.get_model().modelEntities.values()

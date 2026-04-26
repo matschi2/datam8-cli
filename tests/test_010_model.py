@@ -61,14 +61,6 @@ def test_lookup_entity__invalid(locator: str, model: Model):
         model.get_entity_by_locator(locator)
 
 
-def test_has_property__raises(model_lazy: Model):
-    locator = Locator.from_path("dataProducts/Sales")
-    entity = model_lazy.dataProducts[locator]
-
-    with pytest.raises(errors.PropertiesNotResolvedError):
-        entity.has_property("test")
-
-
 @pytest_cases.parametrize_with_cases("test_case", cases=CasesLocator, glob="*_comparison")
 def test_locator_comparison(test_case: tuple[str, str, bool]):
     left_side, right_side, expected_result = test_case
@@ -76,7 +68,7 @@ def test_locator_comparison(test_case: tuple[str, str, bool]):
     right_side = Locator.from_path(right_side)
 
     assert (left_side in right_side) == expected_result, (
-        "Membership check between `{}` in `{}` had the wrong result: {result}, exptected: {}".format(  # noqa: UP032
+        "Membership check between `{}` in `{}` had the wrong result: {result}, expected: {}".format(  # noqa: UP032
             left_side,
             right_side,
             expected_result,
@@ -92,32 +84,15 @@ def test_get_entity_dict(input: tuple[str, list[str]], model: Model):
 
     for entity_name in entity_names:
         match EntityType._value2member_map_[entity_type]:
-            case EntityType.DATA_TYPES:
-                entity = model.get_data_type(entity_name)
-            case EntityType.ATTRIBUTE_TYPES:
-                entity = model.get_attribute_type(entity_name)
-            case EntityType.ZONES:
-                entity = model.get_zone(entity_name)
-            case EntityType.PROPERTIES:
-                entity = model.get_property(entity_name)
-            case EntityType.PROPERTY_VALUES:
-                property, name = entity_name.split("/")
-                entity = model.get_property_value(name, property)
-            case EntityType.DATA_SOURCES:
-                entity = model.get_data_source(entity_name)
-            case EntityType.DATA_SOURCE_TYPES:
-                entity = model.get_data_source_type(entity_name)
-            case EntityType.DATA_PRODUCTS:
-                entity = model.get_data_product(entity_name)
             case EntityType.DATA_MODULES:
                 # NOTE: data modules are currently not being wrapped which results
-                # in a different behaviour / class, which needs to be handlered differntly
+                # in a different behaviour / class, which needs to be handlered differently
                 data_product, data_module = entity_name.split("/")
                 entity = model.get_data_module(data_module, data_product)
                 assert isinstance(entity, DataModule), f"Wrong type {type(entity)}"
                 return
             case _:
-                raise Exception(f"entity type not configured in {__name__}: {entity_type}")
+                entity = model[entity_type].get(entity_name)
 
         assert isinstance(entity, EntityWrapper), (
             f"Looked up entity has the wrong type: {type(entity)}"
@@ -133,6 +108,19 @@ def test_get_entities(model: Model):
     entities = model.get_entities("/modelEntities")
 
     assert len(entities) > 0
+
+
+def test_move_entities(model: Model):
+    wrapper = next(model.modelEntities.values())
+    new_locator = Locator(
+        entityType=wrapper.locator.entityType,
+        folders=wrapper.locator.folders,
+        entityName=f"{wrapper.locator.entityName}_moved",
+    )
+    moved = model.move_entities(wrapper.locator, new_locator)
+
+    assert len(moved) == 1
+    assert model.modelEntities.get(new_locator)
 
 
 # @parametrize_with_cases("locator", cases=CasesLocator, glob="*_multiple")

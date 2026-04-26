@@ -24,9 +24,15 @@ from pathlib import Path
 
 from datam8_model import base as b
 
-from .entity_wrapper import EntityWrapper, EntityWrapperVariant, PropertyReference
+from .entity_wrapper import (
+    EntityDict,
+    EntityRepository,
+    EntityWrapper,
+    EntityWrapperVariant,
+    PropertyReference,
+)
 from .locator import ROOT_LOCATOR, Locator
-from .model import MODEL_DUMP_OPTIONS, EntityDict, Model
+from .model import MODEL_DUMP_OPTIONS, Model
 
 
 def wrap_base_entity[T: b.BaseEntityType](

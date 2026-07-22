@@ -14,6 +14,8 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
+"""Root API router combining all sub-routers and exposing health, version, and config endpoints."""
+
 # along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 from pathlib import Path
@@ -35,6 +37,8 @@ router = APIRouter()
 
 
 class HealthResponse(BaseModel):
+    """Minimal liveness response returned by `GET /health`."""
+
     status: str = "ok"
 
 
@@ -45,6 +49,8 @@ async def get_health() -> HealthResponse:
 
 
 class VersionResponse(BaseModel):
+    """Schema and application version returned by `GET /version`."""
+
     model_config = ConfigDict(populate_by_name=True)
     schema_version: Annotated[str, Field(alias="schemaVersion")]
     app_version: Annotated[str, Field(alias="appVersion")]
@@ -52,7 +58,7 @@ class VersionResponse(BaseModel):
 
 @router.get("/version")
 async def get_version() -> VersionResponse:
-    """Return backend version."""
+    """Return the active model schema version and the backend application version."""
     response = VersionResponse(
         schema_version=factory.get_model().solution.schemaVersion,
         app_version=config.get_version(),
@@ -61,6 +67,8 @@ async def get_version() -> VersionResponse:
 
 
 class ConfigResponse(BaseModel):
+    """Active runtime configuration snapshot returned by `GET /config`."""
+
     model_config = ConfigDict(populate_by_name=True)
     name: str
     solution_file_path: Annotated[Path, Field(alias="solutionFilePath")]
@@ -71,6 +79,7 @@ class ConfigResponse(BaseModel):
 
 @router.get("/config")
 async def get_config() -> ConfigResponse:
+    """Return the active server configuration including solution path, log level, and supported schema versions."""
     response = ConfigResponse(
         name=config.get_name(),
         solution_file_path=config.solution_path,

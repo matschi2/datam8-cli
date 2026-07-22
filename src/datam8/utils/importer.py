@@ -14,6 +14,8 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
+"""Dynamic module loader that imports Python files from target output directories at runtime."""
+
 # along with this program. If not, see <https://www.gnu.org/licenses/>.
 import pathlib
 import sys
@@ -26,12 +28,7 @@ logger = logging.getLogger(__name__)
 
 
 def enable_target_modules(module_path: pathlib.Path) -> None:
-    """Enable target modules.
-
-    Returns
-    -------
-    None
-        Computed return value."""
+    """Register `module_path` with `TargetModuleFinder` so generated Python modules can be imported by name."""
     logger.info(
         "Enable importing from target %s",
         module_path.absolute().relative_to(config.solution_folder_path),
@@ -47,17 +44,7 @@ def enable_target_modules(module_path: pathlib.Path) -> None:
 
 
 def load_modules(module_path: pathlib.Path) -> dict[str, ModuleType]:
-    """Load modules.
-
-    Parameters
-    ----------
-    module_path : pathlib.Path
-        module_path parameter value.
-
-    Returns
-    -------
-    dict[str, ModuleType]
-        Computed return value."""
+    """Recursively discover and load all Python files under `module_path`, returning them keyed by relative module name."""
     modules: dict[str, ModuleType] = {}
     module_files = list(module_path.glob("**/*.py"))
 
@@ -79,24 +66,7 @@ def load_modules(module_path: pathlib.Path) -> dict[str, ModuleType]:
 
 
 def load_module(path: pathlib.Path, module_name: str) -> ModuleType:
-    """Load module.
-
-    Parameters
-    ----------
-    path : pathlib.Path
-        path parameter value.
-    module_name : str
-        module_name parameter value.
-
-    Returns
-    -------
-    ModuleType
-        Computed return value.
-
-    Raises
-    ------
-    Exception
-        Raised when validation or runtime execution fails."""
+    """Load and execute a single Python file as a module, registering it in `sys.modules` under `module_name`."""
     logger.debug(f"Loaded module {path.relative_to(config.solution_folder_path)}")
 
     if path.is_dir():
@@ -124,8 +94,15 @@ def load_module(path: pathlib.Path, module_name: str) -> ModuleType:
 
 
 class TargetModuleFinder(machinery.PathFinder):
+    """A meta path finder that resolves imports from the registered target output directories.
+
+    Paths are accumulated in `_path` via `enable_target_modules` and searched before
+    the standard `sys.path` entries.
+    """
+
     _path = []
 
     @classmethod
     def find_spec(cls, fullname: str, path=None, target=None):
+        """Search `cls._path` for a module spec matching `fullname`."""
         return super().find_spec(fullname, cls._path, target)

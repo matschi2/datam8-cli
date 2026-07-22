@@ -16,17 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-"""
-This module contains CLI commands to interact with the model, e.g. listing, adding or deleting
-entities.
-
-*Subcommands*
-- list
-- show
-
-Not every part of datam8 is pre-imported, some parts, e.g. die api is only imported when commands  related
-to those imports are executed. This reduces startup time.
-"""
+"""Root CLI commands for listing, validating, generating, and serving the DataM8 model."""
 
 # ruff: noqa: I001
 import os
@@ -98,7 +88,7 @@ def list(
     version: opts.Version = False,
     json_output: opts.JsonOutput = False,
 ) -> None:
-    """List model entities"""
+    """List model entities."""
     common.main_callback(solution_path, log_level, version)
 
     model = __setup_model_for_cli(solution_path, log_level, version)
@@ -125,7 +115,7 @@ def list_by_property(
     version: opts.Version = False,
     json_output: opts.JsonOutput = False,
 ) -> None:
-    "List Entities that have a specific property assigned. Searches for model entities by default."
+    """List model entities that have a property matching the given locator."""
     common.main_callback(solution_path, log_level, version)
 
     model = __setup_model_for_cli(solution_path, log_level, version)
@@ -152,7 +142,7 @@ def show(
     version: opts.Version = False,
     log_level: opts.LogLevel = opts.LogLevels.WARNING,
 ) -> None:
-    """Get and display a model entity"""
+    """Get and display a model entity."""
     _model = __setup_model_for_cli(solution_path, log_level, version)
     entity_wrapper = None
 
@@ -192,7 +182,7 @@ def validate(
     log_level: opts.LogLevel = opts.LogLevels.WARNING,
     version: opts.Version = False,
 ):
-    """Validate solution model"""
+    """Validate solution model."""
     _model = __setup_model_for_cli(solution_path, log_level, version, lazy=False)
 
     typer.echo("Validation successful")
@@ -209,8 +199,7 @@ def generate_cmd(
     lazy: opts.Lazy = False,
     version: opts.Version = False,
 ):
-    """Generate a jinja2 template configured in the solution file"""
-
+    """Generate a jinja2 template configured in the solution file."""
     if generate_all:
         logger.warning("The --all option is set, but is currently ignored.")
 
@@ -236,9 +225,10 @@ def init(
     log_level: opts.LogLevel = opts.LogLevels.INFO,
     version: opts.Version = False,
 ):
-    """
-    Initialise a new DataM8 solution. This is experimentell and will current always initialize the
-    sample solution as a starting point.
+    """Initialise a new DataM8 solution from the bundled sample project.
+
+    Experimental: currently always clones the sample solution as a starting point.
+    The target directory must be empty.
     """
     config.log_level = log_level
     common.version_callback(version)
@@ -275,7 +265,7 @@ def serve(
     log_level: opts.LogLevel = opts.LogLevels.INFO,
     version: opts.Version = False,
 ):
-    "Starts the DataM8 fastapi backend"
+    """Start the DataM8 fastapi backend."""
     from datam8.api import app as api_app  # for performance only import when needed
     from datam8 import factory
 

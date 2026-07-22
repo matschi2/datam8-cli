@@ -14,6 +14,8 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
+"""HTTP routes for checking and storing secrets via the DataM8 secret resolver."""
+
 # along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 from fastapi import APIRouter, HTTPException
@@ -25,21 +27,25 @@ secrets_router = APIRouter(prefix="/secrets", tags=["secrets"])
 
 
 class CheckSecretBody(BaseModel):
+    """Request body carrying the path of the secret to look up."""
+
     path: str
 
 
 @secrets_router.post("/check")
 async def check_secret(body: CheckSecretBody) -> None:
-    "Checks if a secret is available for the given path"
+    """Check if a secret is available for the given path."""
     if SecretResolver().get_secret(body.path) is None:
         raise HTTPException(status_code=404, detail="Secret is not available")
 
 
 class SetSecretBody(CheckSecretBody):
+    """Request body for writing a secret value to the resolver store."""
+
     value: str
 
 
 @secrets_router.put("/set")
 async def set_secret(body: SetSecretBody) -> None:
-    "Set a secret with the given value"
+    """Set a secret with the given value."""
     SecretResolver().set_secret(body.path, body.value)

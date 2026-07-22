@@ -12,6 +12,8 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
+"""Registry and loader for DataM8 data source plugins."""
+
 # along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 import importlib
@@ -41,9 +43,12 @@ def _create_plugin_instantiator(cls: type[Plugin], manifest: PluginManifest) -> 
 
 
 class PluginManager:
+    """Manage plugin registration, lazy loading, and instantiation for a DataM8 session."""
+
     __builtin_plugins: dict[str, PluginManifest] = {}
 
     def __init__(self, solution: Solution | None = None) -> None:
+        """Set up empty plugin registries and optionally load plugins from a solution."""
         self.__solution_plugins: dict[str, PluginManifest] = {}
         self.__plugins_dir_path: Path | None = None
         self.__loaded_plugins: dict[str, type[Plugin]] = {}
@@ -53,33 +58,42 @@ class PluginManager:
 
     @classmethod
     def register_builtin_plugin(cls, name: str, /, plugin: PluginManifest) -> None:
+        """Add a built-in plugin manifest to the class-level registry; silently skip if already present."""
         if name not in cls.__builtin_plugins:
             cls.__builtin_plugins[name] = plugin
 
     def register_plugin(self, name: str, /, plugin: PluginManifest) -> None:
-        """
-        Register a PluginManifest under a specific name in this PluginManager. This does not directly load the plugin
-        as it is done lazily on demand.
-        """
+        """Add a solution-level plugin manifest under `name`; the plugin class is loaded lazily on demand."""
         if name is self.__solution_plugins:
             utils.create_error(f"Plugin is already registered: {name}")
 
         self.__solution_plugins[name] = plugin
 
     def reload(self, solution: Solution) -> list[PluginManifest]:
+        """Clear cached plugin classes, reload plugins from the solution, and return the updated list."""
         self.reset_plugins()
         self.load_plugins_from_solution(solution)
 
         return self.get_plugins()
 
     def reset_plugins(self) -> None:
+        """Evict all cached plugin classes so they are re-imported on next use."""
         self.__loaded_plugins = {}
 
     def remove_plugin(self, plugin_id: str, /) -> None:
+        """Unregister a solution-level plugin; built-in plugins are unaffected."""
         if plugin_id in self.__solution_plugins:
             del self.__solution_plugins[plugin_id]
 
     def get_plugin_manifest(self, plugin_id: str, /) -> PluginManifest:
+        """Look up and return the manifest for `plugin_id`, checking solution plugins before built-ins.
+
+        Raises
+        ------
+        Exception
+            If no plugin with `plugin_id` is registered.
+
+        """
         manifest: PluginManifest | None = None
 
         match plugin_id:
@@ -93,11 +107,9 @@ class PluginManager:
         return manifest
 
     def get_plugin_instantiator(self, data_source_type: DataSourceType, /) -> PluginInstantiator:
-        """
-        Lookup a plugin and return an instance of it.
+        """Return a callable that creates a `Plugin` instance for `data_source_type`.
 
-        This is a lazy operation, as a plugin is only loaded once then stored in an internal dictionary.
-        To reset all plugins or remove specific ones use `remove_plugin()` and `reset_plugins()` respectivly.
+        The plugin class is loaded once and cached; subsequent calls reuse the cached class.
         """
         manifest = self.get_plugin_manifest(data_source_type.name)
         PluginClass = self.get_plugin(data_source_type.name)
@@ -105,6 +117,7 @@ class PluginManager:
         return _create_plugin_instantiator(PluginClass, manifest)
 
     def get_plugin(self, plugin_id_: str, /) -> type[Plugin]:
+        """Load and return the `Plugin` class for `plugin_id_`, importing from disk or module path as needed."""
         plugin_id = plugin_id_.removeprefix("builtin:")
 
         if plugin_id in self.__loaded_plugins:
@@ -132,15 +145,11 @@ class PluginManager:
         return PluginClass
 
     def get_plugins(self) -> list[PluginManifest]:
-        """
-        Returns all currently loaded and builtin plugins. Custom plugins will replace builtin one with the same name.
-        """
+        """Return manifests for all registered plugins; solution plugins shadow built-ins of the same name."""
         return list({**PluginManager.__builtin_plugins, **self.__solution_plugins}.values())
 
     def load_plugins_from_solution(self, solution: Solution, /) -> None:
-        """
-        Load plugins from a solution's plugin directory into this PluginManager.
-        """
+        """Scan the solution's plugin directory for `*.json` manifests and register each one."""
         plugins_path = config.solution_folder_path / solution.pluginsPath
         self.__plugins_dir_path = plugins_path
 

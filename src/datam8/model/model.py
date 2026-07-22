@@ -14,6 +14,8 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
+"""In-memory representation of the full DataM8 solution, with entity repositories and persistence helpers."""
+
 # along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 from __future__ import annotations
@@ -50,6 +52,7 @@ MODEL_DUMP_OPTIONS: dict[str, Any] = {
 
 
 def class_from_type(_type: b.EntityType) -> type[b.BaseEntityType]:
+    """Return the concrete Pydantic model class that corresponds to the given entity type enum member."""
     match _type:
         case b.EntityType.PROPERTIES:
             _class = p.Property
@@ -78,12 +81,10 @@ def class_from_type(_type: b.EntityType) -> type[b.BaseEntityType]:
 
 
 class PropertyReference(p.PropertyReference):
-    """
-    Sub-class of `datam8.property.PropertyReference` for actual use with the
-    generator offering further functionality.
-    """
+    """Sub-class of PropertyReference offering further functionality for use with the generator."""
 
     def __eq__(self, other: object) -> bool:
+        """Check equality."""
         if isinstance(other, p.PropertyReference):
             return self.property == other.property and self.value == other.value
         elif not isinstance(other, PropertyReference):
@@ -92,18 +93,18 @@ class PropertyReference(p.PropertyReference):
         return self.property == other.property and self.value == other.value
 
     def __hash__(self):
+        """Return hash."""
         return hash((self.property, self.value))
 
     @staticmethod
     def from_model_ref(ref: p.PropertyReference, /):
-        """
-        Converts a PropertyReference parsed from a json file into the
-        internally used one.
+        """Convert a PropertyReference parsed from a JSON file into the internally used one.
 
-        # Parameters
+        Parameters
         ----------
-        ref : `datam8_model.property.PropertyReference`
+        ref : datam8_model.property.PropertyReference
             Reference to a property value, directly parsed from the json files.
+
         """
         return PropertyReference(
             property=ref.property,
@@ -112,8 +113,7 @@ class PropertyReference(p.PropertyReference):
 
 
 class Model:
-    """
-    The main class that all data from the datam8 solution will be stored in.
+    """The main class that all data from the datam8 solution will be stored in.
 
     It will also be the main interface for use in templates. Nothing else should
     be available there directly.
@@ -136,6 +136,7 @@ class Model:
     lock = Lock()
 
     def __init__(self, solution: s.Solution, /, **kwargs: EntityRepository[b.BaseEntityType]):
+        """Populate all entity repositories and assign this model as their resolver."""
         self.solution = solution
 
         for k, v in kwargs.items():
@@ -151,15 +152,18 @@ class Model:
             self.__next_model_id = max([w.entity.id for w in self.modelEntities.values()])
 
     def __getitem__(self, type_: str) -> EntityRepository[b.BaseEntityType]:
+        """Get item by key."""
         return getattr(self, type_)
 
     def get_next_model_id(self) -> int:
+        """Return the next available model entity ID and increment the internal counter."""
         with self.lock:
             next = self.__next_model_id
             self.__next_model_id += 1
         return next
 
     def init_file_references(self) -> None:
+        """Rebuild the internal file-to-locator index by scanning all current entity wrappers."""
         self._model_files = {}
 
         for _wrapper in self.get_entity_iterator():
@@ -173,6 +177,7 @@ class Model:
     def update_file_reference(
         self, *, _type: b.EntityType, file_path: Path, locators: list[Locator] | None = None
     ) -> None:
+        """Register or update a file reference, optionally appending new locators to it."""
         if file_path not in self._model_files:
             logger.debug(f"Adding new file ref for {file_path}")
             self._model_files[file_path] = EntityFileRef(_type, file_path)
@@ -184,20 +189,18 @@ class Model:
     def resolve_wrapper[T: b.BaseEntityType](
         self, wrapper: EntityWrapper[T], /
     ) -> EntityWrapper[T]:
-        """
-        Recursively lookup concrete property value objects and write them to
-        `EntityWrapper.properties`
+        """Recursively look up concrete property value objects and write them to EntityWrapper.properties.
 
         Parameters
         ----------
-        model : `model.Model`
-            The DataM8 model to lookup up the property values. This normally is the same
-            model as the one this EntityWrapper resides in, but could also be a separate model.
+        wrapper : EntityWrapper[T]
+            The wrapper to resolve.
 
         Returns
         -------
         `EntityWrapper[T]`
             The resolved entity itself.
+
         """
         if wrapper.resolved:
             logger.warning(
@@ -238,7 +241,7 @@ class Model:
             # logger.error(attr.properties)
 
     def resolve(self) -> None:
-        "Resolve all entities by iterating over them."
+        """Resolve all entities by iterating over them."""
         for wrapper in self.get_entity_iterator():
             if not wrapper.resolved:
                 self.resolve_wrapper(wrapper)
@@ -246,13 +249,13 @@ class Model:
     def get_inherited_property_references[T: b.BaseEntityType](
         self, wrapper: EntityWrapper[T], /
     ) -> list[p.PropertyReference]:
-        """
-        Get a distinct list of properties of parent Entities (most likely foldres).
+        """Collect property references inherited from ancestor folders and, for model entities, from the zone.
 
         Returns
         -------
-        `list[PropertyReference]`
-            A list of PropertyReference of parent locators. They are not yet resolved recursively.
+        list[p.PropertyReference]
+            Distinct property references from all ancestor locators, with closer ancestors taking precedence.
+
         """
         parent_properties: list[p.PropertyReference] = []
 
@@ -285,20 +288,17 @@ class Model:
     def _resolve_properties[T: b.BaseEntityType](
         self, wrapper: EntityWrapper[T], /, properties: Sequence[p.PropertyReference]
     ) -> None:
-        """
-        Recursively resolve properties assigned to this entity, directly or indirectly via
-        folders.
+        """Recursively resolve properties assigned to this entity, directly or indirectly via folders.
 
         Parent property references are currently only being resolved for modelEntities.
 
         Parameters
         ----------
-        model : `model.model`
-            The DataM8 model to lookup up the property values. This normally is the same
-            model as the one this EntityWrapper resides in, but could technically be a
-            separate model.
-        properties : `Sequence[PropertyReference]`
+        wrapper : EntityWrapper[T]
+            The entity wrapper to resolve properties for.
+        properties : Sequence[PropertyReference]
             PropertyReferences that should be looked up recursively.
+
         """
         if len(properties) == 0:
             return
@@ -320,6 +320,7 @@ class Model:
                 self._resolve_properties(wrapper, property_value.entity.properties)
 
     def get_entity_iterator(self) -> Iterator[EntityWrapperVariant]:
+        """Yield every wrapper across all entity types in entity-type order."""
         for entity_type in b.EntityType:
             logger.log(5, f"Iterating... {entity_type}")
 
@@ -328,6 +329,7 @@ class Model:
                 yield wrapper  # type: ignore[ty:invalid-yield]
 
     def get_generator_target(self, name: str, /) -> s.GeneratorTarget:
+        """Return the generator target with the given name, falling back to the default target if the name matches the default sentinel."""
         if name == opts.default_target:
             return self.get_generator_default_target()
 
@@ -338,6 +340,7 @@ class Model:
         raise utils.create_error(errors.InvalidGeneratorTargetError(name))
 
     def get_generator_default_target(self) -> s.GeneratorTarget:
+        """Return the single generator target marked as default, raising if zero or multiple defaults exist."""
         default_targets = list(filter(lambda t: t.isDefault, self.solution.generatorTargets))
 
         match len(default_targets):
@@ -351,6 +354,7 @@ class Model:
     def get_entity(
         self, name: str, /, entity_type: b.EntityType
     ) -> EntityWrapper[b.BaseEntityType]:
+        """Return a resolved wrapper for the entity identified by name and entity type."""
         locator = Locator.from_path(f"{entity_type.value}/{name}")
         entity = self[entity_type.value].get(locator)
 
@@ -362,6 +366,7 @@ class Model:
     def get_zone_for_entity(
         self, wrapper: EntityWrapper[m.ModelEntity], /
     ) -> EntityWrapper[z.Zone]:
+        """Return the zone wrapper whose name or local folder name matches the entity's top-level folder."""
         if len(wrapper.locator.folders) == 0:
             raise utils.create_error(errors.InvalidLocatorError(str(wrapper.locator)))
 
@@ -384,15 +389,16 @@ class Model:
         raise errors.EntityNotFoundError(f"dataModule {data_product}:{name}")
 
     def has_locator(self, locator: Locator | str, /) -> bool:
+        """Return True if the given locator exists in the corresponding entity repository."""
         locator_ = _ensure_locator(locator)
         return locator_ in self[locator_.entityType]
 
     def __contains__(self, locator: LocatorOrString, /) -> bool:
+        """Check membership."""
         return self.has_locator(locator)
 
     def get_entity_by_locator(self, locator: str | Locator, /) -> EntityWrapperVariant:
-        """
-        Retrieve a single entity by its locator.
+        """Retrieve a single entity by its locator.
 
         This is implemented as a directly dictionary key lookup, and will fail if
         the entity / locator does not exist.
@@ -406,6 +412,7 @@ class Model:
         -------
         `EntityWrapper`
             Of an unknown entity type. Needs to be type hinted manually if required.
+
         """
         locator = _ensure_locator(locator)
         wrapper = self[locator.entityType].get(locator)
@@ -416,6 +423,7 @@ class Model:
         return wrapper  # type: ignore
 
     def get_base_path_for_entity_type(self, _type: b.EntityType, /) -> Path:
+        """Get base path for entity type."""
         match _type:
             case b.EntityType.MODEL_ENTITIES | b.EntityType.FOLDERS:
                 base_file_path = config.solution_folder_path / self.solution.modelPath
@@ -437,6 +445,10 @@ class Model:
     def add_entity[T: b.BaseEntityType](
         self, locator: Locator | str, /, content: dict[str, Any] | T
     ) -> EntityWrapper[T]:
+        """Create a new entity from a dict or model instance, register it in the model, and return its wrapper.
+
+        Assigns a new model ID automatically for model entities.
+        """
         _locator = _ensure_locator(locator)
         _type = b.EntityType(_locator.entityType)
         base_file_path = self.get_base_path_for_entity_type(_type)
@@ -482,6 +494,7 @@ class Model:
         /,
         new_locator: Locator | str,
     ) -> EntityWrapper[b.BaseEntityType]:
+        """Duplicate an existing entity under a new locator, raising if the entity types differ."""
         to_clone = _ensure_locator(locator)
         new_locator = _ensure_locator(new_locator)
 
@@ -500,6 +513,14 @@ class Model:
         return new_wrapper
 
     def delete_entities(self, locator: Locator | str, /) -> list[Locator]:
+        """Mark all entities within the locator subtree as deleted and return their locators.
+
+        Raises
+        ------
+        InvalidLocatorError
+            If no entities were found under the given locator.
+
+        """
         search_locator = _ensure_locator(locator)
         deleted_locators: list[Locator] = []
 
@@ -514,6 +535,7 @@ class Model:
         return deleted_locators
 
     def delete_entity(self, locator: Locator, /) -> None:
+        """Mark a single entity as deleted; the locator must point to a named entity, not a folder."""
         if locator.entityName is None:
             raise utils.create_error("When deleting an entity, the locator must point to an entity")
 
@@ -522,6 +544,7 @@ class Model:
     def move_entities(
         self, _from: Locator | str, /, _to: Locator | str
     ) -> list[EntityWrapperVariant]:
+        """Move all entities in the source subtree to the destination locator and return the new wrappers."""
         from_locator = _ensure_locator(_from)
         to_locator = _ensure_locator(_to)
 
@@ -541,6 +564,14 @@ class Model:
     def move_entity(
         self, _from: Locator, /, _to: Locator, *, force: bool = False
     ) -> EntityWrapperVariant:
+        """Relocate a single entity to a new locator, marking the original as deleted.
+
+        Parameters
+        ----------
+        force : bool
+            When True, overwrite an existing entity at the target locator.
+
+        """
         if _from.entityName is None:
             raise utils.create_error(
                 Exception(
@@ -590,6 +621,7 @@ class Model:
         /,
         model_locator: str | Locator = "modelEntities/",
     ) -> list[EntityWrapperVariant]:
+        """Return all entities within `model_locator` that have the given property value assigned."""
         locator = _ensure_locator(property_locator)
         if locator.entityName is None or locator.entityType not in [
             b.EntityType.PROPERTIES.value,
@@ -610,6 +642,7 @@ class Model:
     def get_entity_by_selector(
         self, selector: str, /, *, by: opts.Selectors
     ) -> EntityWrapperVariant:
+        """Return a model entity looked up by name, numeric ID, or locator string depending on `by`."""
         match by:
             case opts.Selectors.NAME:
                 for wrapper in self.modelEntities.values():
@@ -630,12 +663,11 @@ class Model:
                 raise NotImplementedError(f"by {by}")
 
     def get_all_entities(self) -> list[EntityWrapperVariant]:
+        """Return a flat list of every wrapper in the model across all entity types."""
         return [wrapper for wrapper in self.get_entity_iterator()]
 
     def get_entities(self, search_locator: str | Locator, /) -> list[EntityWrapperVariant]:
-        """
-        Retrieve a list of EntityWrappers that are hierarchically underneath the
-        given locator.
+        """Retrieve a list of EntityWrappers that are hierarchically underneath the given locator.
 
         Parameters
         ----------
@@ -647,6 +679,7 @@ class Model:
         `list[EntityWrapper]`
             Since the entityType is not known beforehand type hints for the
             entities are not available automatically and need to be added manually.
+
         """
         search_locator = _ensure_locator(search_locator)
 
@@ -669,10 +702,9 @@ class Model:
         return entities  # type: ignore
 
     def get_child_locators(self, search_locator: str | Locator, /) -> list[Locator]:
-        """
-        Retrieve all enties located underneath the given locator, works for all
-        items not only model entities.
+        """Retrieve all entities located underneath the given locator.
 
+        Works for all items, not only model entities.
         Only locators to actual entities are return, no "intermediate" locators point to folders.
 
         Parameters
@@ -685,6 +717,7 @@ class Model:
         `list[Locator]`
             Since the entityType is not known beforehand type hints for the
             entities are not available automatically and need to be added manually.
+
         """
         search_locator = _ensure_locator(search_locator)
         found_wrappers = self[search_locator.entityType].get_many(search_locator)
@@ -693,9 +726,7 @@ class Model:
         return found_locators
 
     def save(self, locator: str | None = None, /) -> None:
-        """
-        Saves the current state of the model or a specific entity to the corresponding json file.
-        """
+        """Save the current state of the model or a specific entity to the corresponding JSON file."""
         changed_wrappers = [w for w in self.get_entities(locator or "/") if w.has_changed]
         deleted_wrappers = [w for w in self.get_entities(locator or "/") if w.is_deleted]
 
@@ -748,6 +779,7 @@ class Model:
         self.cleanup_directories()
 
     def cleanup_entity_file_references(self) -> None:
+        """Remove file reference entries that no longer have any locators associated with them."""
         deleted_files: list[Path] = []
 
         for file_ref in self._model_files:
@@ -758,6 +790,7 @@ class Model:
             del self._model_files[_file]
 
     def cleanup_directories(self) -> None:
+        """Delete empty directories left behind in the model and base solution paths."""
         model_directories = config.solution_folder_path / self.solution.modelPath
         base_directories = config.solution_folder_path / self.solution.basePath
 
@@ -770,24 +803,29 @@ class Model:
                 utils.delete_path(dir_path)
 
     def get_unsaved_entities(self) -> tuple[list[Locator], list[Locator]]:
-        """Returns a list of changed and delete locators"""
+        """Return a list of changed and deleted locators."""
         changed = [wrapper.locator for wrapper in self.get_entity_iterator() if wrapper.has_changed]
         deleted = [wrapper.locator for wrapper in self.get_entity_iterator() if wrapper.is_deleted]
         return changed, deleted
 
 
 class EntityFileRef:
+    """Track the association between a JSON file on disk and the entity locators it contains."""
+
     def __init__(
         self, /, _type: b.EntityType, file_path: Path, locators: list[Locator] | None = None
     ) -> None:
+        """Store the entity type, file path, and initial locator list for this file reference."""
         self._type: b.EntityType = _type
         self.file_path: Path = file_path
         self.locators: list[Locator] = locators or []
 
     def __repr__(self) -> str:
+        """Return repr string."""
         return f"EntityFileRef({self._type} file={self.file_path})"
 
     def create(self, *, wrappers: list[EntityWrapperVariant]) -> None:
+        """Serialise the given wrappers to a new JSON file, creating parent directories as needed."""
         logger.debug(f"Trying to create {self.file_path} with %s entities ", len(wrappers))
 
         if len(wrappers) == 0:
@@ -838,11 +876,13 @@ class EntityFileRef:
         _model.to_json_file(self.file_path, "x", MODEL_DUMP_OPTIONS)
 
     def delete(self, *, wrappers: list[EntityWrapperVariant]) -> bool:
-        """
+        """Delete entities from the file.
+
         Raises
         ------
         FileNotFoundError
             If the file to be updated does not exist
+
         """
         if len(wrappers) == 0:
             return False
@@ -883,11 +923,13 @@ class EntityFileRef:
                 return False
 
     def update(self, *, wrappers: list[EntityWrapperVariant]) -> None:
-        """
+        """Update entities in the file.
+
         Raises
         ------
         FileNotFoundError
             If the file to be updated does not exist
+
         """
         if len(wrappers) == 0:
             return

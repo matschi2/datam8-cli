@@ -12,6 +12,8 @@
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU General Public License for more details.
+"""Utilities for creating and bootstrapping DataM8 solution files."""
+
 #
 
 # You should have received a copy of the GNU General Public License
@@ -32,6 +34,7 @@ SAMPLE_SOLUTION_REPO_URL = "https://github.com/oraylis/datam8-sample-solution"
 
 
 def init_solution(solution_path: Path) -> None:
+    """Create a blank DataM8 solution file and scaffold the standard directory layout."""
     solution = s.Solution(
         schemaVersion=config.latest_schema_version(),  # take newest/left version
         modelPath=Path("model"),
@@ -60,7 +63,7 @@ def init_solution(solution_path: Path) -> None:
 
 
 def init_solution_from_sample(solution_path: Path) -> str:
-    "Downloads the sample solution and returns the initialed version"
+    """Download the sample solution and return the initialized version."""
     try:
         response = requests.get(
             f"{SAMPLE_SOLUTION_REPO_URL}/archive/refs/tags/v{SAMPLE_SOLUTION_VERSION}.zip"

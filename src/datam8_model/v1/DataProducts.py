@@ -14,6 +14,8 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
+"""Dataproducts module."""
+
 # along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 
@@ -28,10 +30,14 @@ from pydantic import BaseModel, ConfigDict, Field
 
 
 class Type(Enum):
+    """Type model."""
+
     DATA_PRODUCT = "dataProduct"
 
 
 class DataModule(BaseModel):
+    """DataModule model."""
+
     model_config = ConfigDict(extra="allow", populate_by_name=True)
     name: str | None = None
     displayName: str | None = None
@@ -39,15 +45,17 @@ class DataModule(BaseModel):
     explanation: str | None = None
 
     def to_dict(self) -> dict:
+        """To dict."""
         return self.model_dump(by_alias=True, exclude_unset=True, mode="json")
 
     @staticmethod
     def from_dict(obj) -> DataModule:
+        """From dict."""
         return DataModule.model_validate(obj, from_attributes=False)
 
     @staticmethod
     def from_json_file(path: Path) -> DataModule:
-        """Loads ands validates a json file from the given path.
+        """Load and validate a JSON file from the given path.
 
         Parameters
         ----------
@@ -63,6 +71,7 @@ class DataModule(BaseModel):
         ------
         ValidationError
             If the data in the json file does not much the model constraints.
+
         """
         with open(path) as file:
             model = DataModule.model_validate_json(file.read())
@@ -71,6 +80,8 @@ class DataModule(BaseModel):
 
 
 class DataProduct(BaseModel):
+    """DataProduct model."""
+
     model_config = ConfigDict(extra="forbid", populate_by_name=True)
     name: str | None = None
     displayName: str | None = None
@@ -79,15 +90,17 @@ class DataProduct(BaseModel):
     module: Sequence[DataModule] | None = None
 
     def to_dict(self) -> dict:
+        """To dict."""
         return self.model_dump(by_alias=True, exclude_unset=True, mode="json")
 
     @staticmethod
     def from_dict(obj) -> DataProduct:
+        """From dict."""
         return DataProduct.model_validate(obj, from_attributes=False)
 
     @staticmethod
     def from_json_file(path: Path) -> DataProduct:
-        """Loads ands validates a json file from the given path.
+        """Load and validate a JSON file from the given path.
 
         Parameters
         ----------
@@ -103,6 +116,7 @@ class DataProduct(BaseModel):
         ------
         ValidationError
             If the data in the json file does not much the model constraints.
+
         """
         with open(path) as file:
             model = DataProduct.model_validate_json(file.read())
@@ -111,21 +125,25 @@ class DataProduct(BaseModel):
 
 
 class Model(BaseModel):
+    """Model model."""
+
     model_config = ConfigDict(extra="allow", populate_by_name=True)
     field_schema: Annotated[str | None, Field(alias="$schema")] = None
     type: Type | None = None
     items: Sequence[DataProduct] | None = None
 
     def to_dict(self) -> dict:
+        """To dict."""
         return self.model_dump(by_alias=True, exclude_unset=True, mode="json")
 
     @staticmethod
     def from_dict(obj) -> Model:
+        """From dict."""
         return Model.model_validate(obj, from_attributes=False)
 
     @staticmethod
     def from_json_file(path: Path) -> Model:
-        """Loads ands validates a json file from the given path.
+        """Load and validate a JSON file from the given path.
 
         Parameters
         ----------
@@ -141,6 +159,7 @@ class Model(BaseModel):
         ------
         ValidationError
             If the data in the json file does not much the model constraints.
+
         """
         with open(path) as file:
             model = Model.model_validate_json(file.read())

@@ -1,3 +1,5 @@
+"""Conversion helpers and orchestration logic for migrating DataM8 v1 models to v2."""
+
 import dataclasses
 import datetime
 import logging
@@ -41,6 +43,7 @@ type Tags = Sequence[str]
 
 
 def data_source(old: ds_legacy.DataSource) -> ds.DataSource:
+    """Migrate a v1 data source to v2 format."""
     if old.name is None or old.type is None:
         raise MigrationError("name|type")
 
@@ -70,6 +73,7 @@ def data_source(old: ds_legacy.DataSource) -> ds.DataSource:
 def data_type_mapping(
     old: ds_legacy.DataTypeMappingItem,
 ) -> ds.SourceDataTypeMapping:
+    """Migrate a v1 data type mapping to v2 format."""
     if old.sourceType is None or old.targetType is None:
         raise MigrationError("sourceType|targetType")
 
@@ -82,6 +86,7 @@ def data_type_mapping(
 
 
 def attribute_type(old: at_legacy.AttributeType) -> a.AttributeType:
+    """Migrate a v1 attribute type to v2 format, mapping legacy unit enum values."""
     if old.isUnit == at_legacy.IsUnit.CURRENCY or old.hasUnit == at_legacy.HasUnit.CURRENCY:
         has_unit = a.HasUnit.CURRENCY
     elif old.isUnit == at_legacy.IsUnit.PHYSICAL or old.hasUnit == at_legacy.IsUnit.PHYSICAL:
@@ -106,6 +111,7 @@ def attribute_type(old: at_legacy.AttributeType) -> a.AttributeType:
 
 
 def data_module(old: dp_legacy.DataModule) -> dp.DataModule:
+    """Migrate a v1 data module to v2 format."""
     if old.name is None:
         raise MigrationError("name")
 
@@ -119,6 +125,7 @@ def data_module(old: dp_legacy.DataModule) -> dp.DataModule:
 
 
 def data_product(old: dp_legacy.DataProduct) -> dp.DataProduct:
+    """Migrate a v1 data product to v2 format."""
     if old.module is None or old.name is None:
         raise MigrationError("module|name")
 
@@ -144,6 +151,7 @@ def _compose_description(purpose: str | None, explanation: str | None) -> str | 
 
 
 def data_type(old: dt_legacy.DataType) -> dt.DataTypeDefinition:
+    """Migrate a v1 data type to v2 format."""
     targets = {
         "databricks": old.parquetType,
         "sqlserver": old.sqlType,
@@ -173,6 +181,7 @@ def base_entities(old: dt_legacy.Model) -> b.DataTypes: ...
 
 
 def base_entities(old: BaseEntitiesType) -> b.BaseEntitiesType:
+    """Migrate v1 base entities to v2 format."""
     if old.items is None:
         raise MigrationError("items")
 
@@ -202,6 +211,7 @@ def base_entities(old: BaseEntitiesType) -> b.BaseEntitiesType:
 def get_dm8l_core_source(
     sources: Sequence[core_legacy.SourceEntity] | None,
 ) -> dict[str, core_legacy.MappingItem]:
+    """Extract the attribute mapping from the `#` (self-referencing) core source entry."""
     attributes: dict[str, core_legacy.MappingItem] = {}
 
     for src in sources or []:
@@ -217,6 +227,7 @@ def get_dm8l_core_source(
 
 
 def attribute(old: core_legacy.Attribute | stage_legacy.Attribute) -> a.Attribute:
+    """Dispatch to the appropriate per-layer attribute migration function."""
     match old:
         case core_legacy.Attribute():
             return attribute_core(old)
@@ -225,6 +236,7 @@ def attribute(old: core_legacy.Attribute | stage_legacy.Attribute) -> a.Attribut
 
 
 def attribute_stage(old: stage_legacy.Attribute) -> a.Attribute:
+    """Migrate a v1 stage-layer attribute, inferring business-key and history from the `BK` tag."""
     is_pk = "BK" in (old.tags or [])
 
     new = a.Attribute(
@@ -252,6 +264,7 @@ def attribute_stage(old: stage_legacy.Attribute) -> a.Attribute:
 
 
 def attribute_core(old: core_legacy.Attribute) -> a.Attribute:
+    """Migrate a v1 core/curated attribute, mapping history types and SK column type properties."""
     if old.dataType is None or old.attributeType is None:
         raise MigrationError("dataType|attributeType")
 
@@ -292,7 +305,10 @@ def attribute_core(old: core_legacy.Attribute) -> a.Attribute:
 
 
 class MigrationV1:
+    """Orchestrates the full migration of a v1 solution's model and base entities to v2."""
+
     def __init__(self, model_file_references: dict[str, parser_v1.ModelFileReference]):
+        """Store the index mapping from v1 locator strings to file references and IDs."""
         self.model_file_references = model_file_references
 
     @overload
@@ -305,6 +321,7 @@ class MigrationV1:
     def model_entities(self, old: curated_legacy.Model) -> m.ModelEntity: ...
 
     def model_entities(self, old: parser_v1.ModelEntitiesType) -> m.ModelEntity:
+        """Dispatch a v1 model entry to the correct per-layer migration method."""
         match old:
             case core_legacy.Model() | curated_legacy.Model():
                 return self.core_entity(old)
@@ -314,6 +331,7 @@ class MigrationV1:
         raise NotImplementedError()
 
     def stage_entity(self, old: stage_legacy.Model) -> m.ModelEntity:
+        """Migrate a v1 stage model entry by resolving its raw source and building v2 mappings."""
         if old.entity is None or old.function is None:
             raise MigrationError("entity|function")
 
@@ -438,6 +456,7 @@ class MigrationV1:
         return new
 
     def core_entity(self, old: core_legacy.Model | curated_legacy.Model) -> m.ModelEntity:
+        """Migrate a v1 core or curated model entry, translating transformations and source mappings."""
         if old.entity is None or old.function is None:
             raise MigrationError("entity|function")
 
@@ -557,10 +576,7 @@ class MigrationV1:
     def migrate_model_entities(
         self, model_dir_path: pathlib.Path, output_path: pathlib.Path
     ) -> Tags:
-        """
-        Migrate tags from a directory and return all used tags
-        """
-
+        """Migrate tags from a directory and return all used tags."""
         tags: list[str] = []
 
         for file in model_dir_path.glob("**/*.json"):
@@ -597,6 +613,11 @@ class MigrationV1:
     def migrate_base_entities(
         base_dir_path: pathlib.Path, output_path: pathlib.Path
     ) -> "NewBaseEntities":
+        """Migrate all v1 base entity JSON files and write them to the output directory.
+
+        Also derives `DataSourceType` records from the data sources and writes
+        data_source_types.json.
+        """
         utils.mkdir(output_path, recursive=True)
 
         data_types, data_products, attribute_types, data_sources = [], [], [], []
@@ -705,6 +726,7 @@ class MigrationV1:
 
     @staticmethod
     def migrate_zones(solution: Solution.Model, output_path: pathlib.Path) -> list[z.Zone]:
+        """Create the v2 zones JSON from the v1 area type names and write it to disk."""
         new_zones = b.Zones(
             type="zones",
             zones=[
@@ -734,6 +756,7 @@ class MigrationV1:
 
     @staticmethod
     def create_new_databricks_solution(output_path: pathlib.Path) -> None:
+        """Write a minimal v2 Databricks solution file to the given path."""
         new_soution = s.Solution(
             schemaVersion="2.0.0",
             basePath=pathlib.Path("Base"),
@@ -755,6 +778,7 @@ class MigrationV1:
 
     @staticmethod
     def create_new_properties(tags: Tags, output_path: pathlib.Path) -> None:
+        """Write properties.json and property_values.json for all discovered tag values."""
         new_properties = b.Properties(
             type="properties",
             properties=[
@@ -785,7 +809,11 @@ class MigrationV1:
         data_products: Sequence[dp.DataProduct],
         output_path: pathlib.Path,
     ) -> None:
-        """Should only be called AFTER other models have been migrated. No new folders will be created."""
+        """Write .properties.json files for every existing zone/product/module folder.
+
+        Must be called only after model entities have already been migrated so the
+        folder structure exists on disk.
+        """
         next_id = 1
 
         for zone in zones:
@@ -830,6 +858,7 @@ class MigrationV1:
 
 
 def timestamp(old: str | None) -> datetime.datetime | None:
+    """Parse a v1 timestamp string into a timezone-aware datetime, trying multiple formats."""
     if old is None:
         return None
     err: Exception | None = None
@@ -851,12 +880,17 @@ def timestamp(old: str | None) -> datetime.datetime | None:
 
 
 class MigrationError(Exception):
+    """Raised when a required v1 attribute is None and cannot be migrated."""
+
     def __init__(self, attr: str):
+        """Initialize with the name of the attribute that must not be None."""
         super().__init__(f"Attribute {attr} cannot be None")
 
 
 @dataclasses.dataclass
 class NewBaseEntities:
+    """Container for the migrated v2 base entity collections produced by MigrationV1.migrate_base_entities."""
+
     data_types: Sequence[dt.DataTypeDefinition]
     data_products: Sequence[dp.DataProduct]
     attribute_types: Sequence[a.AttributeType]

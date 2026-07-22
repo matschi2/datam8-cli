@@ -14,6 +14,8 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
+"""Shared CLI callback helpers used across all command groups."""
+
 # along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 import typer
@@ -28,7 +30,7 @@ def main_callback(
     log_level: opts.LogLevel = opts.LogLevels.WARNING,
     version: opts.Version = False,
 ) -> None:
-    """CLI root callback."""
+    """Set up the global solution path and logging level for any CLI command."""
     version_callback(version)
 
     try:

@@ -14,6 +14,8 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
+"""Assembles the datam8 Typer application by registering all sub-command groups."""
+
 # along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 from .cmd import migrate, plugin, root, secret, sources

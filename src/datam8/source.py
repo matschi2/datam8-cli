@@ -14,6 +14,8 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
+"""Functions for importing model entities from external data sources and refreshing them."""
+
 # along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 from __future__ import annotations
@@ -38,18 +40,20 @@ from . import factory, model, utils
 def compare_entity_with_source(
     locator: l.LocatorOrString, /, *, model: model.Model | None = None
 ) -> tuple[ew.EntityWrapper[m.ModelEntity], DeepDiff]:
-    """
-    Compares a model entity with its current source representation.
+    """Compare a model entity with its current source representation.
 
     Parameters
-    --------------
-    locator : `Locator | str`
+    ----------
+    locator : Locator or str
         The locator of the model entity to refresh.
+    model : model.Model, optional
+        The model to use. If not provided, the current model will be used.
 
     Returns
     -------
-    :class:EntityWrapper[ModelEntity]
-        A copy of the original wrapper with updated values and _changed set to True
+    tuple[EntityWrapper[ModelEntity], DeepDiff]
+        A copy of the original wrapper with updated values and _changed set to True.
+
     """
     model_ = model or factory.get_model()
     wrapper = model_.modelEntities[locator].model_copy(deep=True)
@@ -180,6 +184,7 @@ def import_from_source(
     *,
     model: model.Model | None = None,
 ) -> ew.EntityWrapper[m.ModelEntity]:
+    """Read a table from an external data source and add it to the model at the given locator."""
     model = model or factory.get_model()
     locator_ = l._ensure_locator(locator)
 
@@ -192,6 +197,7 @@ def import_from_source(
 def read_from_data_source(
     data_source: str, source_location: str, /, *, model: model.Model
 ) -> m.ModelEntity:
+    """Fetch table metadata from a data source and build a new :class:`ModelEntity` from it."""
     plugin = factory.get_plugin_for_data_source(data_source, model=model)
     metadata = plugin.get_table_metadata(source_location)
 

@@ -14,6 +14,8 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
+"""Shared Pydantic response envelope types used across all API routes."""
+
 # along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 from __future__ import annotations
@@ -22,11 +24,14 @@ from pydantic import BaseModel
 
 
 class MultiItemResponse[T](BaseModel):
+    """Envelope for a list of items that also exposes the total count."""
+
     count: int
     items: list[T]
 
     @classmethod
     def from_list[K](cls, items: list[K]) -> MultiItemResponse[K]:
+        """Wrap a plain list in a `MultiItemResponse`, setting `count` automatically."""
         return MultiItemResponse(
             count=len(items),
             items=items,
@@ -34,4 +39,6 @@ class MultiItemResponse[T](BaseModel):
 
 
 class SingleItemResponse[T](BaseModel):
+    """Envelope for a single item returned by create or patch endpoints."""
+
     item: T

@@ -14,6 +14,8 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
+"""Built-in plugin for Azure Data Lake Storage Gen2 as a DataM8 data source."""
+
 # along with this program. If not, see <https://www.gnu.org/licenses/>.
 import enum
 import functools
@@ -102,8 +104,7 @@ manifest_azure = PluginManifest(
 
 
 class AzureDataLake(Plugin):
-    """
-    Plugin to interact with Azure Data Lake Storage Gen2.
+    """Plugin to interact with Azure Data Lake Storage Gen2.
 
     This plugin provides connectivity to Azure Data Lake Storage Gen2 using Polars
     built-in cloud storage integration. It supports multiple authentication modes
@@ -120,6 +121,7 @@ class AzureDataLake(Plugin):
     -----
     The plugin uses Polars native cloud storage capabilities with scan_parquet, scan_csv,
     and scan_ndjson for efficient data reading without downloading files locally.
+
     """
 
     __manifest: PluginManifest = manifest_azure
@@ -127,6 +129,7 @@ class AzureDataLake(Plugin):
     def __init__(
         self, manifest: PluginManifest, /, data_source: DataSource, data_source_type: DataSourceType
     ) -> None:
+        """Initialise the plugin, build the Azure credential, service client, and Polars storage options."""
         super().__init__(manifest, data_source, data_source_type)
         AzureDataLake.validate_connection(data_source, data_source_type)
 
@@ -189,6 +192,7 @@ class AzureDataLake(Plugin):
         return f"abfss://{container}@{account_name}.dfs.core.windows.net/{path}"
 
     def test_connection(self) -> Exception | None:
+        """Ping the ADLS Gen2 service by listing file systems; return any exception on failure."""
         try:
             file_systems = self._service_client.list_file_systems(timeout=10)
             next(iter(file_systems), None)
@@ -199,9 +203,7 @@ class AzureDataLake(Plugin):
             return utils.create_error(err)
 
     def list_container(self) -> pl.DataFrame:
-        """
-        In ADLS Gen2, file systems are equivalent to schemas or databases.
-        """
+        """Return a DataFrame of all ADLS Gen2 file systems (containers) in the storage account."""
         try:
             file_systems = self._service_client.list_file_systems()
             schemas = [{"container": fs.name} for fs in file_systems]
@@ -210,6 +212,7 @@ class AzureDataLake(Plugin):
             raise utils.create_error(err)
 
     def list_blobs(self, container: str, path: str) -> pl.DataFrame:
+        """Return a DataFrame of non-recursive blob and directory entries under `path` in `container`."""
         blobs = []
         try:
             fs_client = self._service_client.get_file_system_client(container)
@@ -229,6 +232,7 @@ class AzureDataLake(Plugin):
         return pl.DataFrame(blobs)
 
     def list_source(self, source_location: str | None = None, /) -> pl.DataFrame:
+        """List containers when `source_location` is empty, or blobs within the given container/path."""
         if source_location is None or source_location == "":
             return self.list_container()
 
@@ -236,9 +240,7 @@ class AzureDataLake(Plugin):
         return self.list_blobs(container, path)
 
     def preview_data(self, source_location: str, *, limit: int = 10) -> pl.LazyFrame:
-        """
-        Supports Parquet, CSV, and JSON file formats using Polars native cloud storage.
-        """
+        """Return up to `limit` rows from a Parquet, CSV, JSON, or Delta file on ADLS Gen2."""
         container, path = self.parse_source_location(source_location)
 
         try:
@@ -259,11 +261,7 @@ class AzureDataLake(Plugin):
             raise utils.create_error(err)
 
     def get_table_metadata(self, source_location: str, /) -> TableMetadata:
-        """
-        Extracts column information from structured files (Parquet, CSV, JSON).
-        For non-structured files, returns basic binary content metadata.
-        Uses Polars lazy scanning to read only schema information efficiently.
-        """
+        """Infer column metadata by lazily scanning the Parquet, CSV, JSON, or Delta file at `source_location`."""
         container, path_ = self.parse_source_location(source_location)
         if container == "":
             raise utils.create_error(
@@ -319,15 +317,18 @@ class AzureDataLake(Plugin):
     def validate_connection(
         cls, data_source: DataSource, /, data_source_type: DataSourceType
     ) -> Exception | None:
+        """Perform plugin-specific connection validation (currently a no-op placeholder)."""
         # TODO: implement additional plugin specific validation logics
         return None
 
     @classmethod
     def manifest(cls) -> PluginManifest:
+        """Return the manifest for the built-in AzureDataLake plugin."""
         return cls.__manifest
 
     @staticmethod
     def parse_source_location(source_location: str) -> tuple[str, str]:
+        """Split `container@path` into `(container, path)`; return `(source_location, "/")` when no `@` is present."""
         if "@" in source_location:
             container, path_ = source_location.rsplit("@", maxsplit=1)
             return container, path_
@@ -336,6 +337,7 @@ class AzureDataLake(Plugin):
     @staticmethod
     @functools.lru_cache(maxsize=1)
     def get_auth_modes() -> list[AuthMode]:
+        """Return the three supported Azure auth modes: default, service principal, and managed identity."""
         auth_modes = [
             AuthMode(
                 name=AzureAuthMode.DEFAULT.value,
@@ -361,6 +363,7 @@ class AzureDataLake(Plugin):
     @staticmethod
     @functools.lru_cache(maxsize=1)
     def get_connection_properties() -> list[ConnectionProperty]:
+        """Return connection properties for ADLS Gen2: account name, auth mode, and service-principal credentials."""
         cp = [
             ConnectionProperty(
                 name="authMode",
@@ -399,9 +402,7 @@ class AzureDataLake(Plugin):
     @staticmethod
     @functools.lru_cache(maxsize=1)
     def get_data_type_mappings() -> list[SourceDataTypeMapping]:
-        """
-        Maps Polars data types (read from Parquet, CSV, JSON files) to target types.
-        """
+        """Return mappings from Polars type names (as read from ADLS files) to DataM8 canonical types."""
         global DATA_TYPE_MAPPINGS
 
         return [
@@ -411,6 +412,7 @@ class AzureDataLake(Plugin):
 
     @classmethod
     def resolve_source_type(cls, source_type: str, /) -> str:
+        """Map a Polars type string to its DataM8 canonical type, raising `ValueError` for unknown types."""
         global DATA_TYPE_MAPPINGS
 
         if source_type not in DATA_TYPE_MAPPINGS:

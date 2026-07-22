@@ -61,6 +61,7 @@ class DiagramOption(BaseModel):
         ------
         ValidationError
             If the data in the json file does not much the model constraints.
+
         """
         with open(path) as file:
             model = DiagramOption.model_validate_json(file.read())
@@ -108,6 +109,7 @@ class Diagram(BaseModel):
         ------
         ValidationError
             If the data in the json file does not much the model constraints.
+
         """
         with open(path) as file:
             model = Diagram.model_validate_json(file.read())

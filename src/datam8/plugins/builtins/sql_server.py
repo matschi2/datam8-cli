@@ -14,6 +14,8 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
+"""Built-in plugin for Microsoft SQL Server as a DataM8 data source."""
+
 # along with this program. If not, see <https://www.gnu.org/licenses/>.
 import functools
 import urllib.parse
@@ -95,9 +97,10 @@ DATA_TYPE_MAPPINGS: Final[dict[str, str]] = {
 
 
 class SqlServer(Plugin):
-    """
-    Plugin to interact with MS SQL Server. The connection is done using polars and connector-x which
-    does not rely on any further packages or drivers at uses pyArrow internally.
+    """Plugin to interact with MS SQL Server.
+
+    The connection is done using polars and connector-x which
+    does not rely on any further packages or drivers and uses pyArrow internally.
     """
 
     __manifest: PluginManifest = manifest
@@ -105,12 +108,17 @@ class SqlServer(Plugin):
     def __init__(
         self, manifest: PluginManifest, /, data_source: DataSource, data_source_type: DataSourceType
     ) -> None:
+        """Initialise the plugin, validate connection properties, and log resolved settings."""
         super().__init__(manifest, data_source, data_source_type)
         SqlServer.validate_connection(data_source, data_source_type)
 
         self.logger.debug(f"Properties: {self.extended_properties}")
 
     def get_connection_string(self) -> str:
+        """Build and return a `mssql://` URI from the configured extended properties.
+
+        SECRET-type properties (e.g. password) are URL-encoded; the logged URI masks secret values.
+        """
         mandatory: dict[str, Any] = {}
         optional: dict[str, Any] = {}
 
@@ -172,12 +180,14 @@ class SqlServer(Plugin):
             raise utils.create_error(err)
 
     def test_connection(self) -> Exception | None:
+        """Execute a trivial SELECT to verify the server is reachable; return `None` on success."""
         result = self._execute_query("select 'connected' as [status]")
         if isinstance(result, Exception):
             return result
         return None
 
     def list_source(self, source_location: str | None = None, /) -> pl.DataFrame:
+        """List schemas when `source_location` is empty, or tables within the given schema."""
         if source_location == "" or source_location is None:
             return self.list_schemas()
 
@@ -185,6 +195,7 @@ class SqlServer(Plugin):
         return self.list_tables(schema)
 
     def list_schemas(self) -> pl.DataFrame:
+        """Query `INFORMATION_SCHEMA.SCHEMATA` and return schema names for the configured database."""
         database = (self._data_source.extendedProperties or {})["database"]
         query = f"""
             select
@@ -199,6 +210,7 @@ class SqlServer(Plugin):
         return result
 
     def list_tables(self, schema: str | None = None) -> pl.DataFrame:
+        """Query `INFORMATION_SCHEMA.TABLES` and return table/view names, optionally filtered by `schema`."""
         database = (self._data_source.extendedProperties or {})["database"]
 
         query = f"""
@@ -216,12 +228,14 @@ class SqlServer(Plugin):
         return self._execute_query(query)
 
     def preview_data(self, source_location: str, *, limit: int = 10) -> pl.LazyFrame:
+        """Return up to `limit` rows from the table or view at `source_location` using `SELECT TOP`."""
         schema, table = self.parse_source_location(source_location)
 
         query = f"select top {limit} * from [{schema}].[{table}]"
         return self._execute_query(query).lazy()
 
     def get_table_metadata(self, source_location: str) -> TableMetadata:
+        """Query column metadata from `INFORMATION_SCHEMA` including primary-key and nullability flags."""
         schema, table = self.parse_source_location(source_location)
 
         query = f"""
@@ -287,15 +301,18 @@ class SqlServer(Plugin):
     def validate_connection(
         cls, data_source: DataSource, /, data_source_type: DataSourceType
     ) -> Exception | None:
+        """Perform plugin-specific connection validation (currently a no-op placeholder)."""
         # TODO: implement additional plugin specific validation logics
         return None
 
     @classmethod
     def manifest(cls) -> PluginManifest:
+        """Return the manifest for the built-in SqlServer plugin."""
         return cls.__manifest
 
     @staticmethod
     def parse_source_location(source_location: str) -> tuple[str, str]:
+        """Split `[schema].[table]` notation into `(schema, table)`, stripping square brackets."""
         if "." in source_location:
             schema, table = source_location.split(".", maxsplit=1)
             return schema.strip("[").strip("]"), table.strip("]").strip("[")
@@ -304,6 +321,7 @@ class SqlServer(Plugin):
     @staticmethod
     @functools.lru_cache(maxsize=1)
     def get_auth_modes() -> list[AuthMode]:
+        """Return the two supported auth modes: username/password (`sql_user`) and Windows Authentication."""
         auth_modes = [
             AuthMode(
                 name="sql_user",
@@ -324,6 +342,7 @@ class SqlServer(Plugin):
     @staticmethod
     @functools.lru_cache(maxsize=1)
     def get_connection_properties() -> list[ConnectionProperty]:
+        """Return all SQL Server connection properties: host, port, database, auth mode, credentials, and TLS options."""
         cp = [
             ConnectionProperty(
                 name="authMode", type=ConnectionPropertyValueType.STRING, required=True
@@ -374,6 +393,7 @@ class SqlServer(Plugin):
     @staticmethod
     @functools.lru_cache(maxsize=1)
     def get_data_type_mappings() -> list[SourceDataTypeMapping]:
+        """Return mappings from SQL Server type names to DataM8 canonical types."""
         global DATA_TYPE_MAPPINGS
 
         data_types = [
@@ -384,6 +404,7 @@ class SqlServer(Plugin):
 
     @classmethod
     def resolve_source_type(cls, source_type: str, /) -> str:
+        """Map a SQL Server type string to its DataM8 canonical type, raising `ValueError` for unknown types."""
         global DATA_TYPE_MAPPINGS
 
         if source_type not in DATA_TYPE_MAPPINGS:

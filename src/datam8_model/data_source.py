@@ -30,9 +30,7 @@ from . import property
 
 
 class SourceDataTypeMapping(BaseModel):
-    """
-    A mapping of datatypes name in the source to datam8 internal datatype names.
-    """
+    """A mapping of datatypes name in the source to datam8 internal datatype names."""
 
     model_config = ConfigDict(
         extra="forbid",
@@ -74,6 +72,7 @@ class SourceDataTypeMapping(BaseModel):
         ------
         ValidationError
             If the data in the json file does not much the model constraints.
+
         """
         with open(path) as file:
             model = SourceDataTypeMapping.model_validate_json(file.read())
@@ -93,9 +92,7 @@ class ConnectionPropertyValueType(Enum):
 
 
 class ConnectionProperty(BaseModel):
-    """
-    A property or setting defined by a data source type, which is then available when defining concrete data sources.
-    """
+    """A property or setting defined by a data source type, which is then available when defining concrete data sources."""
 
     name: str
     displayName: str | None = None
@@ -129,6 +126,7 @@ class ConnectionProperty(BaseModel):
         ------
         ValidationError
             If the data in the json file does not much the model constraints.
+
         """
         with open(path) as file:
             model = ConnectionProperty.model_validate_json(file.read())
@@ -141,9 +139,7 @@ class ConnectionProperty(BaseModel):
 
 
 class AuthMode(BaseModel):
-    """
-    A single authentiocation method
-    """
+    """A single authentiocation method"""
 
     model_config = ConfigDict(
         extra="forbid",
@@ -181,6 +177,7 @@ class AuthMode(BaseModel):
         ------
         ValidationError
             If the data in the json file does not much the model constraints.
+
         """
         with open(path) as file:
             model = AuthMode.model_validate_json(file.read())
@@ -193,9 +190,7 @@ class AuthMode(BaseModel):
 
 
 class DataSourceType(BaseModel):
-    """
-    Defines groups of data sources that base on their technology, e.g. `SqlServer` or `Oracle`
-    """
+    """Defines groups of data sources that base on their technology, e.g. `SqlServer` or `Oracle`"""
 
     model_config = ConfigDict(
         extra="forbid",
@@ -257,6 +252,7 @@ class DataSourceType(BaseModel):
         ------
         ValidationError
             If the data in the json file does not much the model constraints.
+
         """
         with open(path) as file:
             model = DataSourceType.model_validate_json(file.read())
@@ -269,9 +265,7 @@ class DataSourceType(BaseModel):
 
 
 class DataSource(BaseModel):
-    """
-    Defines an external source of data to be loaded with datam8.
-    """
+    """Defines an external source of data to be loaded with datam8."""
 
     model_config = ConfigDict(
         extra="forbid",
@@ -318,6 +312,7 @@ class DataSource(BaseModel):
         ------
         ValidationError
             If the data in the json file does not much the model constraints.
+
         """
         with open(path) as file:
             model = DataSource.model_validate_json(file.read())
@@ -361,6 +356,7 @@ class SourceObject(BaseModel):
         ------
         ValidationError
             If the data in the json file does not much the model constraints.
+
         """
         with open(path) as file:
             model = SourceObject.model_validate_json(file.read())
@@ -408,6 +404,7 @@ class SourceField(BaseModel):
         ------
         ValidationError
             If the data in the json file does not much the model constraints.
+
         """
         with open(path) as file:
             model = SourceField.model_validate_json(file.read())

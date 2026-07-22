@@ -14,6 +14,8 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
+"""Register and expose built-in data source plugins for DataM8."""
+
 # along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 # ruff: noqa: F401
@@ -28,12 +30,14 @@ PluginManager.register_builtin_plugin("CsvFile", CsvFile.manifest())
 
 
 def register_lake_source() -> None:
+    """Register the AzureDataLake built-in plugin, importing its optional azure dependencies."""
     from .builtins.lake_source import AzureDataLake
 
     PluginManager.register_builtin_plugin("AzureDataLake", AzureDataLake.manifest())
 
 
 def register_sql_server() -> None:
+    """Register the SqlServer built-in plugin, importing its optional connectorx dependency."""
     from .builtins.sql_server import SqlServer
 
     PluginManager.register_builtin_plugin("SQLServer", SqlServer.manifest())
@@ -42,6 +46,11 @@ def register_sql_server() -> None:
 def init_builtin_plugins(
     *, data_source_type: DataSourceType | None = None, plugin_id: str | None = None
 ) -> None:
+    """Register only the built-in plugins needed for the given data source type or plugin id.
+
+    When both arguments are `None` all built-in plugins are registered.
+    Defers expensive optional imports until actually required.
+    """
     possible_type_name = None if data_source_type is None else data_source_type.name
     possible_plugin_id = None if plugin_id is None else plugin_id.removeprefix("builtin:")
 

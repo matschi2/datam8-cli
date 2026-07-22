@@ -14,6 +14,8 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
+"""Unique entity address type used to identify any object within a DataM8 solution."""
+
 # along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 from __future__ import annotations
@@ -36,12 +38,13 @@ def _ensure_locator(locator: str | Locator) -> Locator:
 
 
 class Locator(m.Locator):
-    """
-    Sub-class of `datam8.model.Locator` offerting further functionality.
-    Should be used instead of its base class.
+    """Extended `datam8_model.Locator` with comparison, containment, and path-parsing helpers.
+
+    Should be used instead of its base class everywhere in the generator.
     """
 
     def __eq__(self, other: object) -> bool:
+        """Check equality."""
         if isinstance(other, str):
             return str(self) == other
 
@@ -59,6 +62,12 @@ class Locator(m.Locator):
         )
 
     def __contains__(self, other: object) -> bool:
+        """Return True if `other` is hierarchically nested inside this locator.
+
+        A locator without an `entityName` acts as a folder prefix: it matches
+        any locator whose folder path starts with the same segments and shares
+        the same `entityType`.
+        """
         # ensure later checks are only done on locator objects
         if isinstance(other, str):
             other = Locator.from_path(other)
@@ -85,16 +94,20 @@ class Locator(m.Locator):
         return left_path.is_relative_to(right_path)
 
     def __hash__(self):
+        """Return hash."""
         return hash(self.__str__())
 
     def __str__(self) -> str:
+        """Return string representation."""
         parts = [self.entityType, *self.folders, self.entityName or ""]
         return "/".join(parts)
 
     def __repr__(self) -> str:
+        """Return repr string."""
         return f"Locator(entityType={self.entityType} folder={self.folders} entityName={self.entityName})"
 
     def clone(self) -> Locator:
+        """Return a shallow copy of this locator."""
         return Locator(
             entityType=self.entityType,
             folders=self.folders,
@@ -103,12 +116,12 @@ class Locator(m.Locator):
 
     @staticmethod
     def from_path(path: str, /) -> Locator:
-        """
-        Creates a Locator object based on the given path.
+        """Create a Locator object based on the given path.
+
         Trailing `.json` suffixes will be removed.
 
         Examples
-        -------
+        --------
         * `/modelEntities/raw/sales/other/Customer.json` resolves to
           - type: modelEntities
           - folders: [raw,sales,other]
@@ -127,6 +140,7 @@ class Locator(m.Locator):
         -------
         `Locator`
             An identifier unique for every object in the solution.
+
         """
         if path == "/":
             return ROOT_LOCATOR
@@ -154,8 +168,7 @@ class Locator(m.Locator):
 
     @property
     def parent(self) -> Locator | None:
-        "Get the parent folder of this entity."
-
+        """Return the nearest parent folder locator, or `None` if already at the root."""
         if len(self.folders) < 1 and self.entityName is None:
             return None
 
@@ -175,8 +188,7 @@ class Locator(m.Locator):
 
     @property
     def parents(self) -> Iterator[Locator]:
-        "Returns all parent folders for this locator."
-
+        """Yield all ancestor folder locators from nearest to root."""
         current = self
 
         while current.parent:
@@ -184,13 +196,13 @@ class Locator(m.Locator):
             current = current.parent
 
     def without_type(self) -> str:
-        """
-        Returns the locator as a string without the type
+        """Return the locator as a string without the type.
 
         Examples
         --------
         >>> Locator.from_path("modelEntities/test").without_type()
         "test"
+
         """
         return f"{'/'.join(self.folders)}/{self.entityName}"
 

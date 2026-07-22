@@ -16,13 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-"""
-Simple caching module to use during template rendering when generating or
-creating values, by using the following classes.
-
-* Cache
-* CacheEntry
-"""
+"""Simple caching module to use during template rendering when generating or creating values."""
 
 from dataclasses import dataclass
 from threading import Lock
@@ -31,12 +25,17 @@ from typing import Any
 
 @dataclass
 class CacheEntry:
+    """A typed wrapper that pairs a cached value with its runtime type."""
+
     type: type
     value: Any
 
 
 class Cache:
+    """Thread-safe key-value store used to share computed values across Jinja2 template calls."""
+
     def __init__(self) -> None:
+        """Initialize   init  ."""
         self.__dict: dict[str, CacheEntry] = {}
         self.lock = Lock()
 
@@ -49,8 +48,9 @@ class Cache:
             identifier to retrieve the value for.
 
         Returns
-        ---------------
+        -------
         The value matching the given key.
+
         """
         # FIXME: enable later again
         # assert isinstance(key, str), "Only strings should be used as cache keys"
@@ -71,6 +71,7 @@ class Cache:
         Returns
         -------
         The newly set value.
+
         """
         # FIXME: enable later again
         # assert isinstance(key, str), "Only strings should be used as cache keys"
@@ -98,6 +99,7 @@ class Cache:
             return [v.value for v in self.__dict.values()]
 
     def __str__(self):
+        """Return string representation."""
         with self.lock:
             return "Cached Items: " + ", ".join(
                 [f"{k}({str(v.value)})" for k, v in self.__dict.items()]

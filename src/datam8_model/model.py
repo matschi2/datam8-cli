@@ -30,9 +30,7 @@ from . import attribute, data_type, property
 
 
 class Locator(BaseModel):
-    """
-    Describes an abstract way to point to and find entities with datam8.
-    """
+    """Describes an abstract way to point to and find entities with datam8."""
 
     model_config = ConfigDict(
         extra="forbid",
@@ -75,6 +73,7 @@ class Locator(BaseModel):
         ------
         ValidationError
             If the data in the json file does not much the model constraints.
+
         """
         with open(path) as file:
             model = Locator.model_validate_json(file.read())
@@ -87,9 +86,7 @@ class Locator(BaseModel):
 
 
 class ModelParameter(BaseModel):
-    """
-    Key-Value pair parameters for customization of and entity-level attributes.
-    """
+    """Key-Value pair parameters for customization of and entity-level attributes."""
 
     model_config = ConfigDict(
         extra="forbid",
@@ -125,6 +122,7 @@ class ModelParameter(BaseModel):
         ------
         ValidationError
             If the data in the json file does not much the model constraints.
+
         """
         with open(path) as file:
             model = ModelParameter.model_validate_json(file.read())
@@ -137,18 +135,14 @@ class ModelParameter(BaseModel):
 
 
 class TransformationKind(Enum):
-    """
-    Type of transformation, either `builtin` or `function`.
-    """
+    """Type of transformation, either `builtin` or `function`."""
 
     BUILTIN = "builtin"
     FUNCTION = "function"
 
 
 class TransformationFunction(BaseModel):
-    """
-    A transformation function defined in the scope of the current solution.
-    """
+    """A transformation function defined in the scope of the current solution."""
 
     model_config = ConfigDict(
         extra="forbid",
@@ -183,6 +177,7 @@ class TransformationFunction(BaseModel):
         ------
         ValidationError
             If the data in the json file does not much the model constraints.
+
         """
         with open(path) as file:
             model = TransformationFunction.model_validate_json(file.read())
@@ -195,9 +190,7 @@ class TransformationFunction(BaseModel):
 
 
 class ModelAttributeMapping(BaseModel):
-    """
-    Single attribute mapping.
-    """
+    """Single attribute mapping."""
 
     model_config = ConfigDict(
         extra="forbid",
@@ -233,6 +226,7 @@ class ModelAttributeMapping(BaseModel):
         ------
         ValidationError
             If the data in the json file does not much the model constraints.
+
         """
         with open(path) as file:
             model = ModelAttributeMapping.model_validate_json(file.read())
@@ -245,9 +239,7 @@ class ModelAttributeMapping(BaseModel):
 
 
 class SourceAttributeMapping(ModelAttributeMapping):
-    """
-    Map an attribute in the source to one in the current entity. May optionally contain an explicit source data type.
-    """
+    """Map an attribute in the source to one in the current entity. May optionally contain an explicit source data type."""
 
     model_config = ConfigDict(
         extra="forbid",
@@ -283,6 +275,7 @@ class SourceAttributeMapping(ModelAttributeMapping):
         ------
         ValidationError
             If the data in the json file does not much the model constraints.
+
         """
         with open(path) as file:
             model = SourceAttributeMapping.model_validate_json(file.read())
@@ -295,9 +288,7 @@ class SourceAttributeMapping(ModelAttributeMapping):
 
 
 class ModelTransformation(BaseModel):
-    """
-    Describes a single transformation, either builtin or defined within the solution.
-    """
+    """Describes a single transformation, either builtin or defined within the solution."""
 
     model_config = ConfigDict(
         extra="forbid",
@@ -342,6 +333,7 @@ class ModelTransformation(BaseModel):
         ------
         ValidationError
             If the data in the json file does not much the model constraints.
+
         """
         with open(path) as file:
             model = ModelTransformation.model_validate_json(file.read())
@@ -354,9 +346,7 @@ class ModelTransformation(BaseModel):
 
 
 class ModelRelationship(BaseModel):
-    """
-    Maps attributes to a target location.
-    """
+    """Maps attributes to a target location."""
 
     model_config = ConfigDict(
         extra="forbid",
@@ -393,6 +383,7 @@ class ModelRelationship(BaseModel):
         ------
         ValidationError
             If the data in the json file does not much the model constraints.
+
         """
         with open(path) as file:
             model = ModelRelationship.model_validate_json(file.read())
@@ -405,9 +396,7 @@ class ModelRelationship(BaseModel):
 
 
 class InternalModelSource(BaseModel):
-    """
-    Internal source definition to reference other entities within datam8.
-    """
+    """Internal source definition to reference other entities within datam8."""
 
     model_config = ConfigDict(
         extra="forbid",
@@ -444,6 +433,7 @@ class InternalModelSource(BaseModel):
         ------
         ValidationError
             If the data in the json file does not much the model constraints.
+
         """
         with open(path) as file:
             model = InternalModelSource.model_validate_json(file.read())
@@ -456,9 +446,7 @@ class InternalModelSource(BaseModel):
 
 
 class ExternalModelSource(BaseModel):
-    """
-    Sources that point to external systems outside of datam8.
-    """
+    """Sources that point to external systems outside of datam8."""
 
     model_config = ConfigDict(
         extra="forbid",
@@ -497,6 +485,7 @@ class ExternalModelSource(BaseModel):
         ------
         ValidationError
             If the data in the json file does not much the model constraints.
+
         """
         with open(path) as file:
             model = ExternalModelSource.model_validate_json(file.read())
@@ -509,9 +498,7 @@ class ExternalModelSource(BaseModel):
 
 
 class ModelEntity(BaseModel):
-    """
-    Describes a single entity within datam8. Most commonly a database table.
-    """
+    """Describes a single entity within datam8. Most commonly a database table."""
 
     model_config = ConfigDict(
         extra="forbid",
@@ -564,6 +551,7 @@ class ModelEntity(BaseModel):
         ------
         ValidationError
             If the data in the json file does not much the model constraints.
+
         """
         with open(path) as file:
             model = ModelEntity.model_validate_json(file.read())

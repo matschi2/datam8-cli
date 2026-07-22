@@ -14,6 +14,8 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
+"""Typed wrappers and repository for DataM8 solution entities."""
+
 # along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 from __future__ import annotations
@@ -52,8 +54,11 @@ def _ensure_string(locator: LocatorOrString) -> str:
 
 
 class EntityRepository[T: b.BaseEntityType]:
-    """
-    `EntityRepository`
+    """Thread-safe, locator-keyed store for `EntityWrapper` objects of a single entity type.
+
+    Lazily resolves wrappers through the associated `IModel` the first time an
+    unresolved wrapper is accessed.  Optionally prefixes bare locator strings
+    with `entity_type` so callers can omit the type segment.
 
     Notes
     -----
@@ -75,6 +80,7 @@ class EntityRepository[T: b.BaseEntityType]:
     >>> wrapper = repository["modelEntities/Sales/Other/Order"]
     ... repository["modelEntities/Sales/Other/Order2"] = wrapper
     ... del repository["modelEntities/Sales/Other/Order2"]
+
     """
 
     def __init__(
@@ -84,6 +90,7 @@ class EntityRepository[T: b.BaseEntityType]:
         entity_type: str | None = None,
         model: IModel | None = None,
     ) -> None:
+        """Set up the internal entity dictionary, optional type prefix, and model reference."""
         self.__entities: dict[Locator, EntityWrapper[T]] = items or {}
         "Internal dictionary containing a mapping of locators and wrappers"
         self.__entity_type: str | None = entity_type
@@ -95,6 +102,7 @@ class EntityRepository[T: b.BaseEntityType]:
 
     @property
     def model(self) -> IModel:
+        """Return the associated model, raising if it has not been set yet."""
         assert self.__model is not None, "Model on repository must be set before usage"
         return self.__model
 
@@ -117,6 +125,14 @@ class EntityRepository[T: b.BaseEntityType]:
                 )
 
     def get(self, locator: LocatorOrString, /) -> EntityWrapper[T]:
+        """Return the wrapper for the given locator, resolving it via the model if not yet resolved.
+
+        Raises
+        ------
+        EntityNotFoundError
+            If no entity with the given locator exists in the repository.
+
+        """
         locator_ = self.__ensure_locator(locator)
 
         if locator_ not in self:
@@ -132,6 +148,14 @@ class EntityRepository[T: b.BaseEntityType]:
             return self.__entities[locator_]
 
     def get_where(self, filter_: Callable[[EntityWrapper[T]], bool], /) -> EntityWrapper[T]:
+        """Return exactly one wrapper matching the predicate.
+
+        Raises
+        ------
+        Exception
+            If zero or more than one entity matches the filter.
+
+        """
         wrappers = self.get_many_where(filter_)
 
         if len(wrappers) > 1:
@@ -145,6 +169,14 @@ class EntityRepository[T: b.BaseEntityType]:
         return wrappers.pop()
 
     def get_by_id(self, id: int, /) -> EntityWrapper[T]:
+        """Return the wrapper whose entity `id` attribute equals the given value.
+
+        Raises
+        ------
+        Exception
+            If no entity with the given id is found, or if the entity type has no `id` field.
+
+        """
         try:
 
             def filter_on_id(wrapper: EntityWrapper[T]):
@@ -158,6 +190,7 @@ class EntityRepository[T: b.BaseEntityType]:
             raise utils.create_error(f"No entity found for id: '{id}'") from err
 
     def get_by_name(self, name: str, /) -> EntityWrapper[T]:
+        """Return the first wrapper whose entity `name` matches, raising if none found."""
         try:
             return self.get_where(lambda w: w.entity.name == name)
         except Exception as err:
@@ -166,6 +199,7 @@ class EntityRepository[T: b.BaseEntityType]:
     def get_many_where(
         self, filter_: Callable[[EntityWrapper[T]], bool], /, locator: LocatorOrString | None = None
     ) -> list[EntityWrapper[T]]:
+        """Return all wrappers matching the predicate, optionally restricted to a locator subtree."""
         iter = filter(filter_, self.__entities.values())
         wrappers: list[EntityWrapper[T]] = []
 
@@ -180,13 +214,16 @@ class EntityRepository[T: b.BaseEntityType]:
         return wrappers
 
     def get_many(self, locator: LocatorOrString, /) -> list[EntityWrapper[T]]:
+        """Return all wrappers whose locators fall within the given locator subtree."""
         locator_ = self.__ensure_locator(locator)
         return self.get_many_where(lambda w: w.locator in locator_)
 
     def get_all(self, /) -> list[EntityWrapper[T]]:
+        """Return every wrapper in the repository as a list."""
         return list(self.values())
 
     def add(self, locator: LocatorOrString, /, wrapper: EntityWrapper[T]) -> None:
+        """Insert a wrapper under the given locator, raising if the locator already exists."""
         with self.lock:
             locator_ = self.__ensure_locator(locator)
             if locator_ in self:
@@ -195,6 +232,7 @@ class EntityRepository[T: b.BaseEntityType]:
             self.__entities[locator_] = wrapper
 
     def remove(self, locator: LocatorOrString, /) -> None:
+        """Remove the wrapper at the given locator, raising if it does not exist."""
         with self.lock:
             locator_ = self.__ensure_locator(locator)
             if locator_ not in self:
@@ -205,58 +243,65 @@ class EntityRepository[T: b.BaseEntityType]:
     # methods to provide a "dictionary-like" experience
 
     def __getitem__(self, locator: LocatorOrString) -> EntityWrapper[T]:
+        """Get item by key."""
         return self.get(locator)
 
     def __setitem__(self, locator: LocatorOrString, /, wrapper: EntityWrapper[T]) -> None:
+        """Set item by key."""
         self.add(locator, wrapper)
 
     def __delitem__(self, locator: LocatorOrString, /) -> None:
+        """Delete item by key."""
         self.remove(locator)
 
     def __contains__(self, locator: LocatorOrString) -> bool:
+        """Check membership."""
         return self.__ensure_locator(locator) in self.__entities
 
     def __len__(self) -> int:
+        """Return length."""
         return len(self.__entities)
 
     def __iter__(self) -> Generator[Locator, None, None]:
+        """Iterate over items."""
         yield from self.__entities
 
     def values(self) -> Generator[EntityWrapper[T], None, None]:
+        """Yield every wrapper stored in the repository."""
         yield from self.__entities.values()
 
     def items(self) -> Generator[tuple[Locator, EntityWrapper[T]], None, None]:
+        """Yield `(locator, wrapper)` pairs for every entity in the repository."""
         yield from self.__entities.items()
 
     def iter(self) -> Generator[Locator, None, None]:
+        """Yield every locator in the repository."""
         return self.__iter__()
 
 
 class PropertyReference(p.PropertyReference):
-    """
-    Sub-class of `datam8.property.PropertyReference` for actual use with the
-    generator offering further functionality.
-    """
+    """Sub-class of PropertyReference offering further functionality for use with the generator."""
 
     def __eq__(self, other: object) -> bool:
+        """Check equality."""
         if isinstance(other, p.PropertyReference):
             return self.property == other.property and self.value == other.value
         else:
             return False
 
     def __hash__(self):
+        """Return hash."""
         return hash((self.property, self.value))
 
     @staticmethod
     def from_model_ref(ref: p.PropertyReference, /) -> PropertyReference:
-        """
-        Converts a PropertyReference parsed from a json file into the
-        internally used one.
+        """Convert a PropertyReference parsed from a JSON file into the internally used one.
 
-        # Parameters
+        Parameters
         ----------
-        ref : `datam8_model.property.PropertyReference`
+        ref : datam8_model.property.PropertyReference
             Reference to a property value, directly parsed from the json files.
+
         """
         return PropertyReference(
             property=ref.property,
@@ -265,9 +310,7 @@ class PropertyReference(p.PropertyReference):
 
 
 class EntityWrapper[T: b.BaseEntityType](BaseModel):
-    """
-    A wrapper class around the actual solution files offering more information
-    and functionality for further use of the model.
+    """Wrap actual solution files, offering more information and functionality for use with the model.
 
     This class should be used everywhere within the generator. The underlying
     objects parsed from the jso files should mostly not handled directly and
@@ -280,6 +323,7 @@ class EntityWrapper[T: b.BaseEntityType](BaseModel):
     entity : `T`, generic
     resolved : `bool`
     properties : `dict[PropertyReference, EntityWrapper[PropertyValue]]`
+
     """
 
     model_config = ConfigDict(populate_by_name=True, arbitrary_types_allowed=True)
@@ -308,6 +352,7 @@ class EntityWrapper[T: b.BaseEntityType](BaseModel):
     "Flag to track if the wrapped entity has been deleted"
 
     def __eq__(self, other: object) -> bool:
+        """Check equality."""
         if not isinstance(other, EntityWrapper):
             return False
 
@@ -315,16 +360,18 @@ class EntityWrapper[T: b.BaseEntityType](BaseModel):
 
     @property
     def has_changed(self) -> bool:
+        """Return True if the wrapped entity has been modified since the last save."""
         return self._changed
 
     @property
     def is_deleted(self) -> bool:
+        """Return True if the entity has been marked for deletion."""
         return self._deleted
 
     @property
     def properties(self) -> dict[Locator, p.PropertyValue]:
-        """
-        Additional properties than are dynamically defined within the solution.
+        """Additional properties that are dynamically defined within the solution.
+
         Contains actual properties based on the property references with the
         `entity.properties` attribute.
 
@@ -332,6 +379,7 @@ class EntityWrapper[T: b.BaseEntityType](BaseModel):
         ------
         PropertiesNotResolvedError
             If the property references within the entity have not been resolved yet.
+
         """
         if not self.resolved:
             raise errors.PropertiesNotResolvedError(self.locator)
@@ -339,6 +387,10 @@ class EntityWrapper[T: b.BaseEntityType](BaseModel):
         return self._properties
 
     def reset(self, locator: Locator, /, *, source_file: Path | None = None) -> None:
+        """Reassign this wrapper to a new locator and clear all resolved state.
+
+        Used when moving an entity to a new location without creating a new wrapper instance.
+        """
         self.locator = locator
         self._properties = {}
         self.resolved = False
@@ -347,18 +399,18 @@ class EntityWrapper[T: b.BaseEntityType](BaseModel):
         self.source_file = source_file or self.source_file
 
     def has_property(self, property_name: str, /) -> bool:
-        """
-        Indicates if this entity has a given property assigned.
+        """Indicate if this entity has a given property assigned.
 
         Parameters
         ----------
-        propert_name : `str`
+        property_name : str
             The property name to check if assigned.
 
         Returns
         -------
         bool
             If true the property name is assigned.
+
         """
         for pr in self.properties:
             if self.properties[pr].property == property_name:
@@ -367,6 +419,11 @@ class EntityWrapper[T: b.BaseEntityType](BaseModel):
         return False
 
     def update(self, **kwargs: Any) -> None:
+        """Apply field updates to the wrapped entity and validate the result.
+
+        Creates a deep copy of the entity with the given keyword arguments applied,
+        re-validates it via Pydantic, and marks the wrapper as changed.
+        """
         new_entity = self.entity.model_copy(update=kwargs, deep=True)
 
         try:
@@ -379,9 +436,13 @@ class EntityWrapper[T: b.BaseEntityType](BaseModel):
 
 
 class IModel(Protocol):
+    """Protocol that the main `Model` class must satisfy to allow cross-repository resolution."""
+
     def resolve_wrapper[T: b.BaseEntityType](
         self, wrapper: EntityWrapper[T], /
-    ) -> EntityWrapper[T]: ...
+    ) -> EntityWrapper[T]:
+        """Resolve an entity wrapper."""
+        ...
 
 
 EntityWrapperVariant: TypeAlias = (  # noqa: UP040

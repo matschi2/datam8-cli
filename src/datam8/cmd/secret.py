@@ -14,6 +14,8 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
+"""CLI sub-commands for managing solution secrets stored in the system keyring."""
+
 # along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 from pathlib import Path, PurePosixPath
@@ -44,7 +46,7 @@ def list(
     log_level: opts.LogLevel = opts.LogLevels.WARNING,
     version: opts.Version = False,
 ):
-    "List available plugins"
+    """List all secrets registered for the current solution."""
     common.main_callback(solution_path, log_level, version)
 
     secrets = SecretResolver().list_secrets()
@@ -61,7 +63,7 @@ def add(
     log_level: opts.LogLevel = opts.LogLevels.WARNING,
     version: opts.Version = False,
 ):
-    "Add a new secret"
+    """Add a new secret."""
     common.main_callback(solution_path, log_level, version)
 
     secret = typer.prompt("New Secret Value", hide_input=True)
@@ -75,7 +77,7 @@ def show(
     log_level: opts.LogLevel = opts.LogLevels.WARNING,
     version: opts.Version = False,
 ):
-    "Display a secret value"
+    """Display a secret value."""
     common.main_callback(solution_path, log_level, version)
 
     secret = SecretResolver().get_secret(PurePosixPath(path))
@@ -94,7 +96,7 @@ def unset(
     log_level: opts.LogLevel = opts.LogLevels.WARNING,
     version: opts.Version = False,
 ):
-    "Remove a secret"
+    """Remove a secret."""
     common.main_callback(solution_path, log_level, version)
     SecretResolver().unset_secret(PurePosixPath(path))
     typer.echo(f"Successfully uset {path}")
@@ -106,7 +108,7 @@ def clean(
     log_level: opts.LogLevel = opts.LogLevels.WARNING,
     version: opts.Version = False,
 ):
-    "Clean all secrets for this solution, effectly deleting them"
+    """Clean all secrets for this solution, deleting them from the keyring."""
     common.main_callback(solution_path, log_level, version)
 
     if typer.confirm("Are you sure you want to delete all registered secrets?"):

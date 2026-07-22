@@ -14,6 +14,8 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
+"""Public API for the DataM8 model package, re-exporting core types and helper functions."""
+
 # along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 # ruff: noqa: F401
@@ -38,24 +40,25 @@ from .model import MODEL_DUMP_OPTIONS, Model
 def wrap_base_entity[T: b.BaseEntityType](
     entity_type: b.EntityType, locator_path: Path, entity: T, source_file: Path
 ) -> EntityWrapper[T]:
-    """
-    Wraps an entity parsed from a json file into an EntityWrapper object.
+    """Wrap a parsed solution entity into an `EntityWrapper` with a resolved `Locator`.
+
+    Derive the locator from `locator_path` by splitting the POSIX path into
+    folders (stripping the leading and trailing segments) and reading the
+    entity name directly from `entity.name`.
 
     Parameters
     ----------
-    entity_type : `EntityType`
-        The entity type parsed from the json file.
-    path : `Path`
-        Source file where the entity was read from.
-    entity : `T`, generic
-        The entity to wrap.
+    entity_type : EntityType
+        The entity type used as the locator's `entityType` segment.
+    locator_path : Path
+        File-system path whose intermediate segments become the locator folders.
+        The first and last segments are stripped.
+    entity : T
+        The parsed entity whose `name` attribute becomes the locator's entity name.
+    source_file : Path
+        Absolute path to the JSON file this entity was read from.
 
-    Returns
-    -------
-    `EntityWrapper[T]`
-        The entity embedded into an EntityWrapper base on the generic type.
     """
-
     locator = Locator(
         entityType=entity_type.value,
         folders=locator_path.as_posix().split("/")[1:-1],
@@ -72,14 +75,10 @@ def wrap_base_entity[T: b.BaseEntityType](
 
 
 def new_empty_entity_type_dict() -> dict[b.EntityType, list[EntityWrapper[b.BaseEntityType]]]:
-    """Create an empty dictionary to every available BaseEntityType.
+    """Create a dictionary with one empty list per `EntityType` member.
 
-    WARNING: The type of the result list items is not set.
+    The item type of each list is intentionally unspecified; callers should
+    narrow the type themselves once they start populating a specific key.
 
-    Returns
-    -------
-    list[Any]
-        A dictionary with a key for every available entity type, mapping to an
-        empty list.
     """
     return {_type: [] for _type in b.EntityType}

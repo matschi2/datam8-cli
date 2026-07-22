@@ -30,9 +30,7 @@ from . import attribute, data_product, data_source, data_type, folder, model, pr
 
 
 class AttributeTypes(BaseModel):
-    """
-    Defines the layout of entity files within the `Base` folder.
-    """
+    """Defines the layout of entity files within the `Base` folder."""
 
     model_config = ConfigDict(
         extra="forbid",
@@ -78,6 +76,7 @@ class AttributeTypes(BaseModel):
         ------
         ValidationError
             If the data in the json file does not much the model constraints.
+
         """
         with open(path) as file:
             model = AttributeTypes.model_validate_json(file.read())
@@ -104,9 +103,7 @@ class EntityType(Enum):
 
 
 class PropertyValues(BaseModel):
-    """
-    Defines the layout of entity files within the `Base` folder.
-    """
+    """Defines the layout of entity files within the `Base` folder."""
 
     model_config = ConfigDict(
         extra="forbid",
@@ -152,6 +149,7 @@ class PropertyValues(BaseModel):
         ------
         ValidationError
             If the data in the json file does not much the model constraints.
+
         """
         with open(path) as file:
             model = PropertyValues.model_validate_json(file.read())
@@ -164,9 +162,7 @@ class PropertyValues(BaseModel):
 
 
 class Zones(BaseModel):
-    """
-    Defines the layout of entity files within the `Base` folder.
-    """
+    """Defines the layout of entity files within the `Base` folder."""
 
     model_config = ConfigDict(
         extra="forbid",
@@ -212,6 +208,7 @@ class Zones(BaseModel):
         ------
         ValidationError
             If the data in the json file does not much the model constraints.
+
         """
         with open(path) as file:
             model = Zones.model_validate_json(file.read())
@@ -224,9 +221,7 @@ class Zones(BaseModel):
 
 
 class DataTypes(BaseModel):
-    """
-    Defines the layout of entity files within the `Base` folder.
-    """
+    """Defines the layout of entity files within the `Base` folder."""
 
     model_config = ConfigDict(
         extra="forbid",
@@ -272,6 +267,7 @@ class DataTypes(BaseModel):
         ------
         ValidationError
             If the data in the json file does not much the model constraints.
+
         """
         with open(path) as file:
             model = DataTypes.model_validate_json(file.read())
@@ -284,9 +280,7 @@ class DataTypes(BaseModel):
 
 
 class DataSourceTypes(BaseModel):
-    """
-    Defines the layout of entity files within the `Base` folder.
-    """
+    """Defines the layout of entity files within the `Base` folder."""
 
     model_config = ConfigDict(
         extra="forbid",
@@ -332,6 +326,7 @@ class DataSourceTypes(BaseModel):
         ------
         ValidationError
             If the data in the json file does not much the model constraints.
+
         """
         with open(path) as file:
             model = DataSourceTypes.model_validate_json(file.read())
@@ -344,9 +339,7 @@ class DataSourceTypes(BaseModel):
 
 
 class Folders(BaseModel):
-    """
-    Defines the layout of entity files within the `Base` folder.
-    """
+    """Defines the layout of entity files within the `Base` folder."""
 
     model_config = ConfigDict(
         extra="forbid",
@@ -392,6 +385,7 @@ class Folders(BaseModel):
         ------
         ValidationError
             If the data in the json file does not much the model constraints.
+
         """
         with open(path) as file:
             model = Folders.model_validate_json(file.read())
@@ -404,9 +398,7 @@ class Folders(BaseModel):
 
 
 class Properties(BaseModel):
-    """
-    Defines the layout of entity files within the `Base` folder.
-    """
+    """Defines the layout of entity files within the `Base` folder."""
 
     model_config = ConfigDict(
         extra="forbid",
@@ -452,6 +444,7 @@ class Properties(BaseModel):
         ------
         ValidationError
             If the data in the json file does not much the model constraints.
+
         """
         with open(path) as file:
             model = Properties.model_validate_json(file.read())
@@ -464,9 +457,7 @@ class Properties(BaseModel):
 
 
 class DataModules(BaseModel):
-    """
-    Defines the layout of entity files within the `Base` folder.
-    """
+    """Defines the layout of entity files within the `Base` folder."""
 
     model_config = ConfigDict(
         extra="forbid",
@@ -512,6 +503,7 @@ class DataModules(BaseModel):
         ------
         ValidationError
             If the data in the json file does not much the model constraints.
+
         """
         with open(path) as file:
             model = DataModules.model_validate_json(file.read())
@@ -524,9 +516,7 @@ class DataModules(BaseModel):
 
 
 class DataSources(BaseModel):
-    """
-    Defines the layout of entity files within the `Base` folder.
-    """
+    """Defines the layout of entity files within the `Base` folder."""
 
     model_config = ConfigDict(
         extra="forbid",
@@ -572,6 +562,7 @@ class DataSources(BaseModel):
         ------
         ValidationError
             If the data in the json file does not much the model constraints.
+
         """
         with open(path) as file:
             model = DataSources.model_validate_json(file.read())
@@ -584,9 +575,7 @@ class DataSources(BaseModel):
 
 
 class DataProducts(BaseModel):
-    """
-    Defines the layout of entity files within the `Base` folder.
-    """
+    """Defines the layout of entity files within the `Base` folder."""
 
     model_config = ConfigDict(
         extra="forbid",
@@ -632,6 +621,7 @@ class DataProducts(BaseModel):
         ------
         ValidationError
             If the data in the json file does not much the model constraints.
+
         """
         with open(path) as file:
             model = DataProducts.model_validate_json(file.read())
@@ -644,9 +634,7 @@ class DataProducts(BaseModel):
 
 
 class ModelEntities(BaseModel):
-    """
-    Defines the layout of entity files within the `Base` folder.
-    """
+    """Defines the layout of entity files within the `Base` folder."""
 
     model_config = ConfigDict(
         extra="forbid",
@@ -692,6 +680,7 @@ class ModelEntities(BaseModel):
         ------
         ValidationError
             If the data in the json file does not much the model constraints.
+
         """
         with open(path) as file:
             model = ModelEntities.model_validate_json(file.read())

@@ -16,9 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-"""
-Wrapper around python's builtin hashlib module for direct usage within jinja2 templates.
-"""
+"""Wrapper around python's builtin hashlib module for direct usage within jinja2 templates."""
 
 import hashlib
 from enum import Enum
@@ -26,22 +24,31 @@ from uuid import UUID
 
 
 class Algorithm(Enum):
+    """Supported hashing algorithms."""
+
     SHA256 = 0
 
 
 class UnknownAlgorithmError(Exception):
+    """Raised when an unsupported algorithm name is passed to `Hasher`."""
+
     def __ini__(self, algorithm: str):
+        """__ini__ magic method."""
         super().__init__(f"Unkown algorithm: {algorithm}")
 
 
 class Hasher:
+    """Compute hashes and deterministic UUIDs from strings using a configurable algorithm."""
+
     __algorithm: Algorithm
 
     @property
     def algorithm(self) -> Algorithm:
+        """Return the active hashing algorithm."""
         return self.__algorithm
 
     def __init__(self, algorithm: str = Algorithm.SHA256.name) -> None:
+        """Initialize   init  ."""
         if algorithm not in Algorithm._member_names_:
             raise UnknownAlgorithmError(algorithm)
 
@@ -49,6 +56,7 @@ class Hasher:
 
     # HACK: return type needs to be in double-quote otherwis the code fails
     def hash(self, input: str) -> "hashlib._Hash":
+        """Return a hash object computed from the UTF-8 encoding of `input`."""
         input_encoded = input.encode()
 
         match self.__algorithm:
@@ -58,6 +66,7 @@ class Hasher:
         return hash_object
 
     def create_uuid(self, input: str) -> UUID:
+        """Derive a deterministic UUID from `input` by hashing it and formatting the digest as a UUID."""
         hash = self.hash(input)
 
         if self.__algorithm == Algorithm.SHA256:

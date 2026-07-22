@@ -14,6 +14,8 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
+"""Base classes and shared types for DataM8 data source plugins."""
+
 # along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 from __future__ import annotations
@@ -47,8 +49,7 @@ logger = logging.getLogger(__name__)
 
 
 class TableMetadata:
-    """
-    Wrapper for table metadata stored as a Polars DataFrame.
+    """Wrapper for table metadata stored as a Polars DataFrame.
 
     Provides conversion methods to transform metadata DataFrame into SourceField objects.
     Validates the DataFrame structure on initialization.
@@ -81,16 +82,18 @@ class TableMetadata:
     ------
     ValueError
         If required columns (name, dataType, ordinal) are missing from the DataFrame.
+
     """
 
     def __init__(self, df: pl.DataFrame, /, source_object: SourceObject | None = None):
+        """Validate `df` structure and fill in optional columns with their defaults."""
         self._df = df
         self.source_object = source_object
         self.__validate_df()
 
     @property
     def dataframe(self) -> pl.DataFrame:
-        """Get the underlying Polars DataFrame."""
+        """Return the underlying Polars DataFrame holding raw column metadata."""
         return self._df
 
     def __validate_df(self) -> None:
@@ -131,14 +134,13 @@ class TableMetadata:
         self._df = self._df.with_columns(**optional_columns)
 
     def iter_source_fields(self) -> Iterator[SourceField]:
-        """
-        Iterate over SourceField objects from the metadata DataFrame.
+        """Yield each row of the metadata DataFrame as a typed `SourceField`.
 
         Yields
         ------
         SourceField
-            SourceField objects representing table columns, yielded one at a time
-            in ordinal position order.
+            One `SourceField` per column in ordinal order.
+
         """
         for row in self._df.iter_rows(named=True):
             yield SourceField(
@@ -155,8 +157,7 @@ class TableMetadata:
 
 
 class MissingCapabilityError(Exception):
-    """
-    Exception raised when a plugin method requires a capability not supported by the plugin.
+    """Exception raised when a plugin method requires a capability not supported by the plugin.
 
     Parameters
     ----------
@@ -164,9 +165,11 @@ class MissingCapabilityError(Exception):
         The required capability that is missing.
     data_source : DataSource | None, optional
         The data source for which the capability is missing.
+
     """
 
     def __init__(self, capability: Capability, data_source: DataSource | None = None):
+        """Build the error message from the missing capability and optional data source name."""
         self.capability = capability
         self.data_source = data_source
         self.msg = f"Plugin is missing {capability}"
@@ -178,8 +181,7 @@ class MissingCapabilityError(Exception):
 
 
 class Plugin(abc.ABC):
-    """
-    Abstract base class for all DataM8 data source plugins.
+    """Abstract base class for all DataM8 data source plugins.
 
     Plugins provide data source connectivity, metadata extraction, and data preview
     capabilities. Each plugin must implement abstract methods and define its
@@ -198,11 +200,13 @@ class Plugin(abc.ABC):
     ------
     Exception
         If connection validation fails during initialization.
+
     """
 
     def __init__(
         self, manifest: PluginManifest, /, data_source: DataSource, data_source_type: DataSourceType
     ) -> None:
+        """Store configuration and run connection property validation, raising on failure."""
         self._manifest: PluginManifest = manifest
         self._data_source: DataSource = data_source
         self._data_source_type: DataSourceType = data_source_type
@@ -213,12 +217,12 @@ class Plugin(abc.ABC):
             raise utils.create_error(error)
 
     def __repr__(self) -> str:
+        """Return repr string."""
         return f"Plugin(id='{self._manifest.id}' data_source='{self._data_source.name}')"
 
     @functools.cached_property
     def extended_properties(self) -> dict[str, Any]:
-        """
-        Get extended connection properties with defaults and resolved secrets.
+        """Get extended connection properties with defaults and resolved secrets.
 
         Merges data source extended properties with defaults from the data source type.
         Resolves any SECRET type properties using the SecretResolver.
@@ -234,6 +238,7 @@ class Plugin(abc.ABC):
             If the plugin does not support connection validation.
         ValueError
             If a secret reference is not a string or cannot be resolved.
+
         """
         if not self.is_capable_of(VALIDATION_CONNECTION):
             raise utils.create_error(MissingCapabilityError(VALIDATION_CONNECTION))
@@ -259,29 +264,17 @@ class Plugin(abc.ABC):
         return base
 
     def get_manifest(self) -> PluginManifest:
-        """
-        Get the plugin manifest.
-
-        Returns
-        -------
-        PluginManifest
-            The plugin manifest containing metadata and capabilities.
-        """
+        """Return the manifest that describes this plugin instance."""
         return self._manifest
 
     def test_connection(self) -> Exception | None:
-        """
-        Test the connection to the data source.
-
-        Returns
-        -------
-        Exception | None
-            None if connection is successful, Exception object if connection fails.
+        """Attempt to connect to the data source and return any error, or `None` on success.
 
         Raises
         ------
         MissingCapabilityError
-            If the plugin does not support connection validation.
+            If the plugin does not declare `VALIDATION_CONNECTION`.
+
         """
         if not self.is_capable_of(VALIDATION_CONNECTION):
             raise utils.create_error(MissingCapabilityError(VALIDATION_CONNECTION))
@@ -292,18 +285,24 @@ class Plugin(abc.ABC):
     # TODO: find way to type hint the DataFrame to make plugin development smoother?
 
     def list_source(self, source_location: str | None = None, /) -> pl.DataFrame:
-        """
-        List all schemas (databases, file systems, containers) in the data source.
+        """Return available schemas, containers, or objects within the data source.
+
+        Parameters
+        ----------
+        source_location : str | None
+            When provided, list objects inside that location; when `None`,
+            list top-level schemas or containers.
 
         Returns
         -------
         pl.DataFrame
-            DataFrame with a single column 'schema' containing schema names.
+            DataFrame with at least a `schema` column.
 
         Raises
         ------
         MissingCapabilityError
-            If the plugin does not support metadata operations.
+            If the plugin does not declare `METADATA`.
+
         """
         if not self.is_capable_of(METADATA):
             raise utils.create_error(MissingCapabilityError(METADATA))
@@ -312,31 +311,13 @@ class Plugin(abc.ABC):
         )
 
     def get_table_metadata(self, source_location: str, /) -> TableMetadata:
-        """
-        Get column metadata for a specific table or file.
-
-        Parameters
-        ----------
-        table : str
-            The table or file name.
-        schema : str | None, optional
-            The schema or container name. Some data sources require this parameter.
-
-        Returns
-        -------
-        pl.DataFrame
-            DataFrame containing column metadata with columns:
-            - COLUMN_NAME : str
-                Name of the column
-            - DATA_TYPE : str
-                Data type of the column in source format
-            - ORDINAL_POSITION : int
-                1-indexed position of the column
+        """Return column-level metadata for the object at `source_location`.
 
         Raises
         ------
         MissingCapabilityError
-            If the plugin does not support metadata operations.
+            If the plugin does not declare `METADATA`.
+
         """
         if not self.is_capable_of(METADATA):
             raise utils.create_error(MissingCapabilityError(METADATA))
@@ -345,71 +326,23 @@ class Plugin(abc.ABC):
         )
 
     def preview_data(self, source_location: str, *, limit: int = 10) -> pl.LazyFrame:
-        """
-        Preview data from a table or file.
-
-        Parameters
-        ----------
-        table : str
-            The table or file name.
-        schema : str | None, optional
-            The schema or container name. Some data sources require this parameter.
-        limit : int, default=10
-            Maximum number of rows to preview.
-
-        Returns
-        -------
-        pl.LazyFrame
-            Lazy DataFrame containing up to `limit` rows from the table or file.
-
-        Raises
-        ------
-        NotImplementedError
-            If the plugin does not implement data preview.
-        """
+        """Return a lazy frame with at most `limit` rows from the given source location."""
         raise utils.create_error(
             NotImplementedError(f"preview_data not implemented by {self.manifest().id}")
         )
 
     @classmethod
     def is_capable_of(cls, capability: Capability, /) -> bool:
-        """
-        Check if the plugin supports a specific capability.
-
-        Parameters
-        ----------
-        capability : Capability
-            The capability to check for.
-
-        Returns
-        -------
-        bool
-            True if the plugin supports the capability, False otherwise.
-        """
+        """Return `True` if this plugin declares the given capability in its manifest."""
         return capability in cls.manifest().capabilities
 
     @classmethod
     def validate_connection(
         cls, data_source: DataSource, /, data_source_type: DataSourceType
     ) -> Exception | None:
-        """
-        Validate connection properties for the data source.
+        """Check that all required connection properties are present and no unknown ones are set.
 
-        Performs basic validation of required and optional properties. Subclasses
-        can override this method to add plugin-specific validation logic.
-
-        Parameters
-        ----------
-        data_source : DataSource
-            The data source configuration to validate.
-        data_source_type : DataSourceType
-            The data source type definition containing required properties.
-
-        Returns
-        -------
-        Exception | None
-            None if validation succeeds, Exception object describing the error
-            if validation fails.
+        Logs a warning for extra properties; returns an `Exception` for missing required ones.
         """
         ds_properties: dict[str, Any] = dict(data_source.extendedProperties)
         dst_properties: dict[str, ConnectionProperty] = {
@@ -441,33 +374,18 @@ class Plugin(abc.ABC):
     @classmethod
     @abc.abstractmethod
     def manifest(cls) -> PluginManifest:
-        """
-        Get the plugin manifest.
-
-        Returns
-        -------
-        PluginManifest
-            The plugin manifest containing metadata and capabilities.
-        """
+        """Return the `PluginManifest` that describes this plugin's id, version and capabilities."""
         ...
 
     @classmethod
     @abc.abstractmethod
-    def resolve_source_type(cls, source_type: str, /) -> str: ...
+    def resolve_source_type(cls, source_type: str, /) -> str:
+        """Map a source-specific type string to the canonical DataM8 target type."""
+        ...
 
     @classmethod
     def get_ui_schema(cls) -> UiSchema:
-        """
-        Generate UI schema for the plugin's connection configuration.
-
-        Builds a UI schema from the plugin's manifest, authentication modes, and
-        connection properties. Used by the UI to render connection forms.
-
-        Returns
-        -------
-        UiSchema
-            UI schema containing authentication modes and their fields.
-        """
+        """Build a `UiSchema` from the manifest and connection properties for UI form rendering."""
         manifest = cls.manifest()
 
         ui_schema = UiSchema(
@@ -498,49 +416,27 @@ class Plugin(abc.ABC):
 
     @staticmethod
     @abc.abstractmethod
-    def parse_source_location(source_location: str) -> tuple[str, ...]: ...
+    def parse_source_location(source_location: str) -> tuple[str, ...]:
+        """Split a source location string into its constituent parts (e.g. schema and table name)."""
+        ...
 
     @staticmethod
     @functools.lru_cache
     @abc.abstractmethod
     def get_auth_modes() -> list[AuthMode]:
-        """
-        Get supported authentication modes for the plugin.
-
-        Returns
-        -------
-        list[AuthMode]
-            List of supported authentication modes with their required and
-            optional properties.
-        """
+        """Return the authentication modes supported by this plugin."""
         ...
 
     @staticmethod
     @functools.lru_cache
     @abc.abstractmethod
     def get_connection_properties() -> list[ConnectionProperty]:
-        """
-        Get connection properties required by the plugin.
-
-        Returns
-        -------
-        list[ConnectionProperty]
-            List of connection properties with their types, requirements,
-            and default values.
-        """
+        """Return all connection properties understood by this plugin, including optional ones."""
         ...
 
     @staticmethod
     @functools.lru_cache
     @abc.abstractmethod
     def get_data_type_mappings() -> list[SourceDataTypeMapping]:
-        """
-        Get data type mappings from source types to target types.
-
-        Returns
-        -------
-        list[SourceDataTypeMapping]
-            List of mappings from source-specific data types to standardized
-            target data types used by the DataM8 system.
-        """
+        """Return mappings from source-specific type names to DataM8 canonical types."""
         ...

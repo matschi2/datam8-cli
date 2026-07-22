@@ -14,6 +14,8 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
+"""Global runtime configuration state shared across the datam8 library."""
+
 # along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 from __future__ import annotations
@@ -37,26 +39,29 @@ lazy: bool
 
 
 def latest_schema_version() -> str:
+    """Return the newest supported schema version (the first entry in `supported_model_versions`)."""
     return supported_model_versions[0]
 
 
 def get_version() -> str:
+    """Return the installed datam8 package version string."""
     return version("datam8")
 
 
 def get_name() -> str:
+    """Return the solution name derived by stripping the `.dm8s` extension from the solution filename."""
     return solution_path.name.removesuffix(".dm8s")
 
 
 def set_solution(path: str | Path) -> None:
-    """
-    Configures the solution to be used within the library.
+    """Configure the solution to be used within the library.
 
     Parameters
     ----------
-    `path` : *str* or *Path*
+    path : str or Path
         A pathlike object pointing to either a .dm8s file directory or a directory containing one. If a directory
         was provided it need to contain only a single .dm8s file.
+
     """
     global solution_path, solution_folder_path
     search_path = Path(path).expanduser()
@@ -94,6 +99,8 @@ def set_solution(path: str | Path) -> None:
 
 
 class RunMode(IntEnum):
+    """Execution context of the datam8 tool, controlling error-handling behaviour."""
+
     CLI = 0
     "Default mode"
     API = 1

@@ -30,9 +30,7 @@ from . import data_type, property
 
 
 class HistoryType(Enum):
-    """
-    Defines how an attribute in a slowly changing dimension should behave.
-    """
+    """Defines how an attribute in a slowly changing dimension should behave."""
 
     SCD0 = "SCD0"
     SCD1 = "SCD1"
@@ -48,9 +46,7 @@ class ExpressionLanguage(Enum):
 
 
 class HasUnit(Enum):
-    """
-    Defines if an attribute should define a unit, e.g. `Physical` for weight or `Currency` for price.
-    """
+    """Defines if an attribute should define a unit, e.g. `Physical` for weight or `Currency` for price."""
 
     NO_UNIT = "NoUnit"
     PHYSICAL = "Physical"
@@ -58,9 +54,7 @@ class HasUnit(Enum):
 
 
 class AttributeType(BaseModel):
-    """
-    Defines abstract business orientated attribute definitions, e.g. an email address
-    """
+    """Defines abstract business orientated attribute definitions, e.g. an email address"""
 
     model_config = ConfigDict(
         extra="forbid",
@@ -107,6 +101,7 @@ class AttributeType(BaseModel):
         ------
         ValidationError
             If the data in the json file does not much the model constraints.
+
         """
         with open(path) as file:
             model = AttributeType.model_validate_json(file.read())
@@ -119,9 +114,7 @@ class AttributeType(BaseModel):
 
 
 class Attribute(BaseModel):
-    """
-    An attribute of a model entity.
-    """
+    """An attribute of a model entity."""
 
     model_config = ConfigDict(
         extra="forbid",
@@ -174,6 +167,7 @@ class Attribute(BaseModel):
         ------
         ValidationError
             If the data in the json file does not much the model constraints.
+
         """
         with open(path) as file:
             model = Attribute.model_validate_json(file.read())

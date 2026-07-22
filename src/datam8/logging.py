@@ -16,9 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-"""
-Logging module to simplify and setup a common logging approach.
-"""
+"""Logging module to simplify and setup a common logging approach."""
 
 from __future__ import annotations
 
@@ -46,6 +44,7 @@ def setup_logger(
     log_directory: pathlib.Path | None = None,
     enable_write_log: bool = False,
 ) -> None:
+    """Configure the root logger with the active log level and an optional file handler."""
     stream_handler = logging.StreamHandler()
     stream_handler.setFormatter(ColorFormatter())
 
@@ -77,7 +76,7 @@ def setup_logger(
 
 
 class ColorFormatter(Formatter):
-    """Logging Formatter to add colors and count warning/errors"""
+    """Logging Formatter to add colors and count warning/errors."""
 
     grey = "\x1b[90m"
     green = "\x1b[92m"
@@ -100,6 +99,7 @@ class ColorFormatter(Formatter):
     # fmt: on
 
     def format(self, record) -> str:
+        """Apply the level-specific colour format and shorten WARNING/CRITICAL level names."""
         record.levelname = "WARN" if record.levelname == "WARNING" else record.levelname
         record.levelname = "ERROR" if record.levelname == "CRITICAL" else record.levelname
         log_fmt = self.FORMATS.get(record.levelno)

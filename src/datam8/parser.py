@@ -16,9 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-"""
-This module handles all parsing of json files into generator internal objects.
-"""
+"""Module handles all parsing of json files into generator internal objects."""
 
 from __future__ import annotations
 
@@ -65,6 +63,7 @@ async def parse_full_solution_async(solution_path: pathlib.Path, /) -> Model:
     Model
         The parsed model from files BUT not validated in regards to internal
         references, e.g. PropertyReferences.
+
     """
     logger.debug("Start parsing solution")
 
@@ -95,6 +94,7 @@ def __parse_base_entity_type(entity_type: str, /) -> b.EntityType:
 
 
 def parse_solution_file(path: pathlib.Path, /) -> s.Solution:
+    """Read and validate a `*.dm8s` solution file, raising an error for unsupported schema versions."""
     solution = s.Solution.from_json_file(path)
 
     if solution.schemaVersion not in config.supported_model_versions:

@@ -28,9 +28,7 @@ from pydantic import BaseModel, ConfigDict
 
 
 class Capability(Enum):
-    """
-    Available capabilities plugins can implement
-    """
+    """Available capabilities plugins can implement"""
 
     UI_SCHEMA = "uiSchema"
     VALIDATION_CONNECTION = "validationConnection"
@@ -69,6 +67,7 @@ class UiField(BaseModel):
         ------
         ValidationError
             If the data in the json file does not much the model constraints.
+
         """
         with open(path) as file:
             model = UiField.model_validate_json(file.read())
@@ -110,6 +109,7 @@ class UiAuthMode(BaseModel):
         ------
         ValidationError
             If the data in the json file does not much the model constraints.
+
         """
         with open(path) as file:
             model = UiAuthMode.model_validate_json(file.read())
@@ -150,6 +150,7 @@ class UiSchema(BaseModel):
         ------
         ValidationError
             If the data in the json file does not much the model constraints.
+
         """
         with open(path) as file:
             model = UiSchema.model_validate_json(file.read())
@@ -162,9 +163,7 @@ class UiSchema(BaseModel):
 
 
 class PluginManifest(BaseModel):
-    """
-    A DataM8 plugin that e.g. provides additional ways to connect to source systems
-    """
+    """A DataM8 plugin that e.g. provides additional ways to connect to source systems"""
 
     model_config = ConfigDict(
         extra="forbid",
@@ -209,6 +208,7 @@ class PluginManifest(BaseModel):
         ------
         ValidationError
             If the data in the json file does not much the model constraints.
+
         """
         with open(path) as file:
             model = PluginManifest.model_validate_json(file.read())

@@ -27,9 +27,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 
 class PropertyReference(BaseModel):
-    """
-    Used to reference from any entity to a `Property`.
-    """
+    """Used to reference from any entity to a `Property`."""
 
     model_config = ConfigDict(
         extra="forbid",
@@ -65,6 +63,7 @@ class PropertyReference(BaseModel):
         ------
         ValidationError
             If the data in the json file does not much the model constraints.
+
         """
         with open(path) as file:
             model = PropertyReference.model_validate_json(file.read())
@@ -77,9 +76,7 @@ class PropertyReference(BaseModel):
 
 
 class PropertyScope(BaseModel):
-    """
-    Defines for which type of entities a `PropertyType` is available for assignment.
-    """
+    """Defines for which type of entities a `PropertyType` is available for assignment."""
 
     model_config = ConfigDict(
         extra="forbid",
@@ -119,6 +116,7 @@ class PropertyScope(BaseModel):
         ------
         ValidationError
             If the data in the json file does not much the model constraints.
+
         """
         with open(path) as file:
             model = PropertyScope.model_validate_json(file.read())
@@ -131,9 +129,7 @@ class PropertyScope(BaseModel):
 
 
 class PropertyValue(BaseModel):
-    """
-    A single globally available static property value that can be referenced from other entities.
-    """
+    """A single globally available static property value that can be referenced from other entities."""
 
     model_config = ConfigDict(
         extra="allow",
@@ -175,6 +171,7 @@ class PropertyValue(BaseModel):
         ------
         ValidationError
             If the data in the json file does not much the model constraints.
+
         """
         with open(path) as file:
             model = PropertyValue.model_validate_json(file.read())
@@ -187,9 +184,7 @@ class PropertyValue(BaseModel):
 
 
 class Property(BaseModel):
-    """
-    Defines properties for which specific pre-selectable values can created.
-    """
+    """Defines properties for which specific pre-selectable values can created."""
 
     model_config = ConfigDict(
         extra="allow",
@@ -227,6 +222,7 @@ class Property(BaseModel):
         ------
         ValidationError
             If the data in the json file does not much the model constraints.
+
         """
         with open(path) as file:
             model = Property.model_validate_json(file.read())

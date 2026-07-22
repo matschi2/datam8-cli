@@ -14,6 +14,8 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
+"""Index module."""
+
 # along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 
@@ -26,21 +28,25 @@ from pydantic import BaseModel, ConfigDict
 
 
 class IndexEntry(BaseModel):
+    """IndexEntry model."""
+
     locator: str
     name: str
     absPath: str
     references: Sequence[str] | None = None
 
     def to_dict(self) -> dict:
+        """To dict."""
         return self.model_dump(by_alias=True, exclude_unset=True, mode="json")
 
     @staticmethod
     def from_dict(obj) -> IndexEntry:
+        """From dict."""
         return IndexEntry.model_validate(obj, from_attributes=False)
 
     @staticmethod
     def from_json_file(path: Path) -> IndexEntry:
-        """Loads ands validates a json file from the given path.
+        """Load and validate a JSON file from the given path.
 
         Parameters
         ----------
@@ -56,6 +62,7 @@ class IndexEntry(BaseModel):
         ------
         ValidationError
             If the data in the json file does not much the model constraints.
+
         """
         with open(path) as file:
             model = IndexEntry.model_validate_json(file.read())
@@ -64,19 +71,23 @@ class IndexEntry(BaseModel):
 
 
 class RawIndex(BaseModel):
+    """RawIndex model."""
+
     model_config = ConfigDict(extra="forbid", populate_by_name=True)
     entry: Sequence[IndexEntry] | None = None
 
     def to_dict(self) -> dict:
+        """To dict."""
         return self.model_dump(by_alias=True, exclude_unset=True, mode="json")
 
     @staticmethod
     def from_dict(obj) -> RawIndex:
+        """From dict."""
         return RawIndex.model_validate(obj, from_attributes=False)
 
     @staticmethod
     def from_json_file(path: Path) -> RawIndex:
-        """Loads ands validates a json file from the given path.
+        """Load and validate a JSON file from the given path.
 
         Parameters
         ----------
@@ -92,6 +103,7 @@ class RawIndex(BaseModel):
         ------
         ValidationError
             If the data in the json file does not much the model constraints.
+
         """
         with open(path) as file:
             model = RawIndex.model_validate_json(file.read())
@@ -100,19 +112,23 @@ class RawIndex(BaseModel):
 
 
 class StageIndex(BaseModel):
+    """StageIndex model."""
+
     model_config = ConfigDict(extra="forbid", populate_by_name=True)
     entry: Sequence[IndexEntry] | None = None
 
     def to_dict(self) -> dict:
+        """To dict."""
         return self.model_dump(by_alias=True, exclude_unset=True, mode="json")
 
     @staticmethod
     def from_dict(obj) -> StageIndex:
+        """From dict."""
         return StageIndex.model_validate(obj, from_attributes=False)
 
     @staticmethod
     def from_json_file(path: Path) -> StageIndex:
-        """Loads ands validates a json file from the given path.
+        """Load and validate a JSON file from the given path.
 
         Parameters
         ----------
@@ -128,6 +144,7 @@ class StageIndex(BaseModel):
         ------
         ValidationError
             If the data in the json file does not much the model constraints.
+
         """
         with open(path) as file:
             model = StageIndex.model_validate_json(file.read())
@@ -136,19 +153,23 @@ class StageIndex(BaseModel):
 
 
 class CoreIndex(BaseModel):
+    """CoreIndex model."""
+
     model_config = ConfigDict(extra="forbid", populate_by_name=True)
     entry: Sequence[IndexEntry] | None = None
 
     def to_dict(self) -> dict:
+        """To dict."""
         return self.model_dump(by_alias=True, exclude_unset=True, mode="json")
 
     @staticmethod
     def from_dict(obj) -> CoreIndex:
+        """From dict."""
         return CoreIndex.model_validate(obj, from_attributes=False)
 
     @staticmethod
     def from_json_file(path: Path) -> CoreIndex:
-        """Loads ands validates a json file from the given path.
+        """Load and validate a JSON file from the given path.
 
         Parameters
         ----------
@@ -164,6 +185,7 @@ class CoreIndex(BaseModel):
         ------
         ValidationError
             If the data in the json file does not much the model constraints.
+
         """
         with open(path) as file:
             model = CoreIndex.model_validate_json(file.read())
@@ -172,19 +194,23 @@ class CoreIndex(BaseModel):
 
 
 class CuratedIndex(BaseModel):
+    """CuratedIndex model."""
+
     model_config = ConfigDict(extra="forbid", populate_by_name=True)
     entry: Sequence[IndexEntry] | None = None
 
     def to_dict(self) -> dict:
+        """To dict."""
         return self.model_dump(by_alias=True, exclude_unset=True, mode="json")
 
     @staticmethod
     def from_dict(obj) -> CuratedIndex:
+        """From dict."""
         return CuratedIndex.model_validate(obj, from_attributes=False)
 
     @staticmethod
     def from_json_file(path: Path) -> CuratedIndex:
-        """Loads ands validates a json file from the given path.
+        """Load and validate a JSON file from the given path.
 
         Parameters
         ----------
@@ -200,6 +226,7 @@ class CuratedIndex(BaseModel):
         ------
         ValidationError
             If the data in the json file does not much the model constraints.
+
         """
         with open(path) as file:
             model = CuratedIndex.model_validate_json(file.read())
@@ -208,21 +235,25 @@ class CuratedIndex(BaseModel):
 
 
 class Model(BaseModel):
+    """Model model."""
+
     rawIndex: RawIndex | None = None
     stageIndex: StageIndex | None = None
     coreIndex: CoreIndex | None = None
     curatedIndex: CuratedIndex | None = None
 
     def to_dict(self) -> dict:
+        """To dict."""
         return self.model_dump(by_alias=True, exclude_unset=True, mode="json")
 
     @staticmethod
     def from_dict(obj) -> Model:
+        """From dict."""
         return Model.model_validate(obj, from_attributes=False)
 
     @staticmethod
     def from_json_file(path: Path) -> Model:
-        """Loads ands validates a json file from the given path.
+        """Load and validate a JSON file from the given path.
 
         Parameters
         ----------
@@ -238,6 +269,7 @@ class Model(BaseModel):
         ------
         ValidationError
             If the data in the json file does not much the model constraints.
+
         """
         with open(path) as file:
             model = Model.model_validate_json(file.read())

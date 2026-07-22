@@ -1,3 +1,5 @@
+"""Parser for DataM8 v1 solution files and model entity JSON files."""
+
 import dataclasses
 import json
 import pathlib
@@ -20,6 +22,7 @@ type ModelEntitiesType = (
 def parse_solution_file(
     solution_file_path: pathlib.Path,
 ) -> tuple[Solution.Model, dict[str, "ModelFileReference"]]:
+    """Parse a v1 solution file and its index, returning the solution and a locator-to-file mapping."""
     solution = Solution.Model.from_json_file(solution_file_path)
     index = Index.Model.from_json_file(solution_file_path.parent / "index.json")
     indeces: list[IndexEntry] = []
@@ -48,6 +51,7 @@ def parse_solution_file(
 
 
 def read_type(file_path: pathlib.Path) -> type[ModelEntitiesType]:
+    """Inspect the `type` field of a v1 model JSON file and return the matching pydantic model class."""
     _type: str = json.loads(file_path.read_bytes())["type"].upper()
 
     match _type:
@@ -64,6 +68,7 @@ def read_type(file_path: pathlib.Path) -> type[ModelEntitiesType]:
 
 
 def parse_model_file(model_file_path: pathlib.Path) -> ModelEntitiesType:
+    """Detect the layer type of a v1 model file and deserialise it into the correct pydantic model."""
     _type = read_type(model_file_path)
 
     match _type:
@@ -81,5 +86,7 @@ def parse_model_file(model_file_path: pathlib.Path) -> ModelEntitiesType:
 
 @dataclasses.dataclass
 class ModelFileReference:
+    """Maps a v1 index entry to an auto-assigned integer ID and the absolute file path."""
+
     id: int
     path: pathlib.Path

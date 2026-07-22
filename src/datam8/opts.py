@@ -14,6 +14,8 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
+"""Typer-annotated option and argument type aliases shared across all CLI commands."""
+
 # along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 from enum import Enum
@@ -26,6 +28,8 @@ default_target = "none"
 
 
 class LogLevels(Enum):
+    """Available logging verbosity levels for the CLI."""
+
     DEBUG = "debug"
     INFO = "info"
     WARNING = "warning"
@@ -34,6 +38,8 @@ class LogLevels(Enum):
 
 
 class Selectors(Enum):
+    """Strategies for resolving an entity selector passed to the `show` command."""
+
     AUTO = "auto"
     RELATIVE = "relPath"
     LOCATOR = "locator"

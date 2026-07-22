@@ -75,6 +75,7 @@ class Folder(BaseModel):
         ------
         ValidationError
             If the data in the json file does not much the model constraints.
+
         """
         with open(path) as file:
             model = Folder.model_validate_json(file.read())

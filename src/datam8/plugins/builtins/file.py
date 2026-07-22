@@ -14,6 +14,8 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
+"""Built-in plugin for reading local CSV files as a DataM8 data source."""
+
 # along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 import functools
@@ -56,6 +58,8 @@ manifest_csv = PluginManifest(
 
 
 class CsvFile(Plugin):
+    """Built-in plugin that reads local CSV files using Polars."""
+
     __manifest: PluginManifest = manifest_csv
 
     def _get_path(self) -> Path:
@@ -73,6 +77,7 @@ class CsvFile(Plugin):
         return path
 
     def test_connection(self) -> Exception | None:
+        """Verify that the configured base directory exists on the local filesystem."""
         path = self._get_path()
         if not path.exists():
             raise utils.create_error(
@@ -82,6 +87,14 @@ class CsvFile(Plugin):
             )
 
     def list_source(self, source_location: str | None = None, /) -> pl.DataFrame:
+        """Return a DataFrame of CSV files and subdirectories under the configured path.
+
+        Parameters
+        ----------
+        source_location : str | None
+            Sub-path relative to the data source root to list; lists root when `None`.
+
+        """
         if source_location is not None:
             _, path = self.parse_source_location(source_location)
             path = self._get_path() / path
@@ -100,6 +113,7 @@ class CsvFile(Plugin):
         return pl.DataFrame(data)
 
     def preview_data(self, source_location: str, *, limit: int = 10) -> pl.LazyFrame:
+        """Read up to `limit` rows from the CSV file at `source_location`."""
         _, path = self.parse_source_location(source_location)
         path = self._get_path() / path
 
@@ -111,6 +125,7 @@ class CsvFile(Plugin):
         return df.lazy()
 
     def get_table_metadata(self, source_location: str, /) -> TableMetadata:
+        """Infer column names and types from the CSV schema without reading all rows."""
         _, table = self.parse_source_location(source_location)
         path = self._get_path()
         lf = pl.scan_csv(path / table, **self.extended_properties)
@@ -143,19 +158,23 @@ class CsvFile(Plugin):
 
     @classmethod
     def manifest(cls) -> PluginManifest:
+        """Return the manifest for the built-in CsvFile plugin."""
         return cls.__manifest
 
     @staticmethod
     def create_source_location(table: str, schema: str | None = None) -> str:
+        """Return a source location string for the given file path; schema is ignored for CSV files."""
         return table
 
     @staticmethod
     def parse_source_location(source_location: str) -> tuple[str, str]:
+        """Return `("", source_location)` — CSV files have no schema component."""
         return "", source_location
 
     @staticmethod
     @functools.lru_cache(maxsize=1)
     def get_auth_modes() -> list[AuthMode]:
+        """Return the single anonymous/no-auth mode that requires only `path` and `protocol`."""
         auth_modes = [
             AuthMode(
                 name="no_auth", displayName="No Auth / Anonymous", required=["path", "protocol"]
@@ -166,6 +185,7 @@ class CsvFile(Plugin):
     @staticmethod
     @functools.lru_cache(maxsize=1)
     def get_data_type_mappings() -> list[SourceDataTypeMapping]:
+        """Return mappings from CSV inferred types (`string`, `number`) to DataM8 canonical types."""
         global DATA_TYPE_MAPPINGS
 
         return [
@@ -175,6 +195,7 @@ class CsvFile(Plugin):
 
     @classmethod
     def resolve_source_type(cls, source_type: str, /) -> str:
+        """Map a CSV source type to its DataM8 canonical type, raising `ValueError` for unknown types."""
         global DATA_TYPE_MAPPINGS
 
         if source_type not in DATA_TYPE_MAPPINGS:
@@ -185,6 +206,7 @@ class CsvFile(Plugin):
     @staticmethod
     @functools.lru_cache(maxsize=1)
     def get_connection_properties() -> list[ConnectionProperty]:
+        """Return connection properties: required `path`, optional `protocol` and `has_header`."""
         cps = [
             ConnectionProperty(name="path", required=True, type=ConnectionPropertyValueType.STRING),
             ConnectionProperty(

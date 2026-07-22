@@ -14,6 +14,8 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
+"""Attributetypes module."""
+
 # along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 
@@ -28,10 +30,14 @@ from pydantic import BaseModel, ConfigDict, Field
 
 
 class Type(Enum):
+    """Type model."""
+
     ATTRIBUTE_TYPE = "attributeType"
 
 
 class HasUnit(Enum):
+    """HasUnit model."""
+
     NO_UNIT = "NoUnit"
     PHYSICAL = "Physical"
     CURRENCY = "Currency"
@@ -39,12 +45,16 @@ class HasUnit(Enum):
 
 
 class IsUnit(Enum):
+    """IsUnit model."""
+
     NO_UNIT = "NoUnit"
     PHYSICAL = "Physical"
     CURRENCY = "Currency"
 
 
 class AttributeType(BaseModel):
+    """AttributeType model."""
+
     model_config = ConfigDict(extra="allow", populate_by_name=True)
     name: str
     displayName: str
@@ -60,15 +70,17 @@ class AttributeType(BaseModel):
     isDefaultProperty: bool | None = False
 
     def to_dict(self) -> dict:
+        """To dict."""
         return self.model_dump(by_alias=True, exclude_unset=True, mode="json")
 
     @staticmethod
     def from_dict(obj) -> AttributeType:
+        """From dict."""
         return AttributeType.model_validate(obj, from_attributes=False)
 
     @staticmethod
     def from_json_file(path: Path) -> AttributeType:
-        """Loads ands validates a json file from the given path.
+        """Load and validate a JSON file from the given path.
 
         Parameters
         ----------
@@ -84,6 +96,7 @@ class AttributeType(BaseModel):
         ------
         ValidationError
             If the data in the json file does not much the model constraints.
+
         """
         with open(path) as file:
             model = AttributeType.model_validate_json(file.read())
@@ -92,21 +105,25 @@ class AttributeType(BaseModel):
 
 
 class Model(BaseModel):
+    """Model model."""
+
     model_config = ConfigDict(extra="allow", populate_by_name=True)
     field_schema: Annotated[str | None, Field(alias="$schema")] = None
     type: Type | None = None
     items: Sequence[AttributeType] | None = None
 
     def to_dict(self) -> dict:
+        """To dict."""
         return self.model_dump(by_alias=True, exclude_unset=True, mode="json")
 
     @staticmethod
     def from_dict(obj) -> Model:
+        """From dict."""
         return Model.model_validate(obj, from_attributes=False)
 
     @staticmethod
     def from_json_file(path: Path) -> Model:
-        """Loads ands validates a json file from the given path.
+        """Load and validate a JSON file from the given path.
 
         Parameters
         ----------
@@ -122,6 +139,7 @@ class Model(BaseModel):
         ------
         ValidationError
             If the data in the json file does not much the model constraints.
+
         """
         with open(path) as file:
             model = Model.model_validate_json(file.read())

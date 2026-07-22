@@ -14,6 +14,8 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
+"""Thread-safe keyring-backed secret management for DataM8 solutions."""
+
 # along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 from __future__ import annotations
@@ -47,10 +49,13 @@ def _path_to_env_var(path: PurePosixPath) -> str:
 
 
 class SecretResolver:
+    """Singleton that stores and retrieves solution secrets via the system keyring or environment variables."""
+
     __instance: SecretResolver | None = None
     __lock = Lock()
 
     def __new__(cls) -> SecretResolver:
+        """Create or return the singleton instance."""
         if cls.__instance is None:
             with cls.__lock:
                 if cls.__instance is None:
@@ -60,10 +65,12 @@ class SecretResolver:
 
     @classmethod
     def reset_singleton(cls) -> None:
+        """Destroy the shared instance so the next call to `__new__` creates a fresh one."""
         with cls.__lock:
             cls.__instance = None
 
     def __init__(self) -> None:
+        """Initialise the resolver, verify keyring availability, and determine the current OS user."""
         self.__service_name = f"{SECRET_PREFIX}{config.get_name()}"
         user_from_env = os.getenv("USER") or os.getenv("USERNAME")
 
@@ -144,7 +151,7 @@ class SecretResolver:
     #
 
     def set_secret(self, path: PurePosixPath | str, value: str, /, *, force: bool = False) -> None:
-        "Set a new secret or overwrite an existing one"
+        """Set a new secret or overwrite an existing one."""
         path_ = _ensure_path(path)
         service_name = self.__create_service_name(path_)
 
@@ -158,7 +165,7 @@ class SecretResolver:
             self.__register_secret(path_)
 
     def unset_secret(self, path: PurePosixPath | str, /) -> None:
-        "Remove a secret from the keyring backend"
+        """Remove a secret from the keyring backend."""
         path_ = _ensure_path(path)
         service_name = self.__create_service_name(path_)
 
@@ -172,7 +179,7 @@ class SecretResolver:
             self.__unset_password(service_name)
 
     def list_secrets(self) -> list[PurePosixPath]:
-        "Returns a list of available secrets"
+        """Return a list of available secrets."""
         service_name = self.__create_service_name()
 
         with self.lock:
@@ -188,6 +195,7 @@ class SecretResolver:
         return [PurePosixPath(p) for p in secret_list]
 
     def get_secret(self, path: PurePosixPath | str, /) -> str | None:
+        """Return the secret value for the given path, checking env vars before the keyring."""
         path_ = _ensure_path(path)
         service_name = self.__create_service_name(path_)
 
@@ -200,6 +208,7 @@ class SecretResolver:
         return secret
 
     def clean(self) -> None:
+        """Remove all secrets registered for the current solution from the keyring backend."""
         secrets = self.list_secrets()
         with suppress(Exception), self.lock:
             for s in secrets:

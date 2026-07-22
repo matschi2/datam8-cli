@@ -14,6 +14,8 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
+"""FastAPI application factory and server setup for the DataM8 HTTP API."""
+
 # along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 from __future__ import annotations
@@ -77,8 +79,22 @@ def _bind(host: str, port: int) -> tuple[socket.socket, int]:
 
 
 def create_app(*, token: str | None = None, enable_openapi: bool = False) -> FastAPI:
-    """Create and configure the HTTP API application."""
+    """Build the FastAPI application with middleware and exception handlers.
 
+    Attaches a per-request trace ID, optional Bearer-token auth for all
+    non-health endpoints, CORS headers, and structured error responses for
+    `Datam8Error` and unexpected exceptions.
+
+    Parameters
+    ----------
+    token:
+        When provided, every request to a non-exempt path must supply a
+        matching `Authorization: Bearer <token>` header.
+    enable_openapi:
+        When `False` (default), the `/docs`, `/redoc` and
+        `/openapi.json` endpoints are disabled.
+
+    """
     if enable_openapi:
         app = FastAPI(title="DataM8 API", version=config.get_version())
     else:
@@ -185,6 +201,11 @@ def create_app(*, token: str | None = None, enable_openapi: bool = False) -> Fas
 
 
 def create_server(*, host: str, port: int, app: FastAPI) -> uvicorn.Server:
+    """Wrap a FastAPI app in a configured uvicorn server.
+
+    Registers a startup handler that prints the readiness line consumed by
+    Neon (`API ready at …`) once the server is accepting connections.
+    """
     base_url = f"http://{host}:{port}"
 
     @app.on_event("startup")

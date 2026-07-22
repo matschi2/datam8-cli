@@ -14,8 +14,9 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
-# along with this program. If not, see <https://www.gnu.org/licenses/>.
+"""CLI sub-commands for connecting to, browsing, and importing from external data sources."""
 
+# along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 import deepdiff
 import rich
@@ -46,7 +47,7 @@ def list_(
     log_level: opts.LogLevel = opts.LogLevels.WARNING,
     version: opts.Version = False,
 ):
-    "List available objects in a source (schema, tables, etc.)"
+    """List available objects in a source (schema, tables, etc.)."""
     common.main_callback(solution_path, log_level, version)
 
     plugin = factory.get_plugin_for_data_source(data_source_name)
@@ -66,7 +67,7 @@ def preview(
     log_level: opts.LogLevel = opts.LogLevels.WARNING,
     version: opts.Version = False,
 ):
-    "Preview data from a source location"
+    """Preview data from a source location."""
     common.main_callback(solution_path, log_level, version)
 
     plugin = factory.get_plugin_for_data_source(data_source_name)
@@ -94,7 +95,7 @@ def import_(
     log_level: opts.LogLevel = opts.LogLevels.WARNING,
     version: opts.Version = False,
 ):
-    "Import a table from a source into the model at the provided locator"
+    """Import a table from a source into the model at the provided locator."""
     common.main_callback(solution_path, log_level, version)
 
     model_ = factory.get_model()
@@ -116,6 +117,7 @@ def refresh(
     log_level: opts.LogLevel = opts.LogLevels.WARNING,
     version: opts.Version = False,
 ):
+    """Refresh a model entity by comparing it to the current state of its source and apply changes interactively."""
     common.main_callback(solution_path, log_level, version)
 
     model_ = factory.get_model()
@@ -181,7 +183,7 @@ def metadata(
     log_level: opts.LogLevel = opts.LogLevels.WARNING,
     version: opts.Version = False,
 ):
-    "Retrieve metadata from a source object"
+    """Retrieve metadata from a source object."""
     common.main_callback(solution_path, log_level, version)
 
     plugin = factory.get_plugin_for_data_source(data_source_name)
@@ -200,7 +202,7 @@ def test_connection(
     log_level: opts.LogLevel = opts.LogLevels.WARNING,
     version: opts.Version = False,
 ):
-    "Validate connectionstring and try connecting to the source"
+    """Validate connectionstring and try connecting to the source."""
     common.main_callback(solution_path, log_level, version)
 
     plugin = factory.get_plugin_for_data_source(data_source_name)

@@ -27,9 +27,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 
 class DataType(BaseModel):
-    """
-    An datam8 abstract internal data type.
-    """
+    """An datam8 abstract internal data type."""
 
     model_config = ConfigDict(
         extra="forbid",
@@ -68,6 +66,7 @@ class DataType(BaseModel):
         ------
         ValidationError
             If the data in the json file does not much the model constraints.
+
         """
         with open(path) as file:
             model = DataType.model_validate_json(file.read())
@@ -80,9 +79,7 @@ class DataType(BaseModel):
 
 
 class DataTypeDefinition(BaseModel):
-    """
-    Defines a class of data type to configure which `DataType` properties are relevant for a specific type.
-    """
+    """Defines a class of data type to configure which `DataType` properties are relevant for a specific type."""
 
     model_config = ConfigDict(
         extra="forbid",
@@ -126,6 +123,7 @@ class DataTypeDefinition(BaseModel):
         ------
         ValidationError
             If the data in the json file does not much the model constraints.
+
         """
         with open(path) as file:
             model = DataTypeDefinition.model_validate_json(file.read())

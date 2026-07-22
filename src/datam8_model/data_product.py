@@ -29,9 +29,7 @@ from . import property
 
 
 class DataModule(BaseModel):
-    """
-    Defines ...
-    """
+    """Defines ..."""
 
     model_config = ConfigDict(
         extra="forbid",
@@ -69,6 +67,7 @@ class DataModule(BaseModel):
         ------
         ValidationError
             If the data in the json file does not much the model constraints.
+
         """
         with open(path) as file:
             model = DataModule.model_validate_json(file.read())
@@ -81,9 +80,7 @@ class DataModule(BaseModel):
 
 
 class DataProduct(BaseModel):
-    """
-    Defines ...
-    """
+    """Defines ..."""
 
     model_config = ConfigDict(
         extra="forbid",
@@ -122,6 +119,7 @@ class DataProduct(BaseModel):
         ------
         ValidationError
             If the data in the json file does not much the model constraints.
+
         """
         with open(path) as file:
             model = DataProduct.model_validate_json(file.read())

@@ -14,6 +14,8 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
+"""Factory functions for creating and caching the global DataM8 model and plugin manager."""
+
 # along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 from __future__ import annotations
@@ -44,8 +46,7 @@ _plugin_manager: plugins.PluginManager | None = None
 def get_plugin_manager(
     solution: s.Solution | None = None, /, *, reset: bool = False
 ) -> plugins.PluginManager:
-    """
-    Get a plugin manager for the currently loaded solution.
+    """Get a plugin manager for the currently loaded solution.
 
     Parameter
     ---------
@@ -57,6 +58,7 @@ def get_plugin_manager(
     Returns
     -------
     A :class:`PluginManager` object, that if newly created has all available Plugins already registered
+
     """
     global _plugin_manager
 
@@ -69,6 +71,7 @@ def get_plugin_manager(
 def get_plugin_for_data_source(
     data_source: ds.DataSource | str, *, model: model.Model | None = None
 ) -> plugins.Plugin:
+    """Return an instantiated plugin for the given data source name or object."""
     _model = model or get_model()
 
     if isinstance(data_source, str):
@@ -87,9 +90,9 @@ def get_plugin_for_data_source(
 
 
 def get_model() -> model.Model:
-    """
-    Get the currently loaded model. In case no model was loaded yet, it will create it
-    based on the current configuration.
+    """Get the currently loaded model.
+
+    In case no model was loaded yet, it will create it based on the current configuration.
     """
     global _model
 
@@ -100,19 +103,20 @@ def get_model() -> model.Model:
 
 
 def create_model(solution_path: pathlib.Path | None = None, /) -> model.Model:
-    """
-    Create model from a provided solution path. If no path is provided it will fall back to the
-    global configuration.
+    """Create model from a provided solution path.
+
+    If no path is provided it will fall back to the global configuration.
 
     Parameters
     ----------
     solution_path : pathlib.Path | None
-        solution_path parameter value.
+        Path to the solution file.
 
     Returns
     -------
     model.Model
-        Computed return value.
+        The created model.
+
     """
     global _model
 
@@ -126,6 +130,7 @@ def create_model(solution_path: pathlib.Path | None = None, /) -> model.Model:
 
 
 async def load_model(solution_path: pathlib.Path, /) -> model.Model:
+    """Parse and initialise a model from a solution file, resolving references unless lazy mode is active."""
     _model = await parser.parse_full_solution_async(solution_path)
     create_undefined_folders(_model)
     _model.init_file_references()
@@ -137,21 +142,21 @@ async def load_model(solution_path: pathlib.Path, /) -> model.Model:
 
 
 def create_model_or_exit(solution_path: pathlib.Path | None = None, /) -> model.Model:
-    """
-    Create model and exit the program in case of a known error. This function is mainly provided
-    to be used in the context of a CLI.
+    """Create model and exit the program in case of a known error.
+
+    This function is mainly provided to be used in the context of a CLI.
 
     Parameters
     ----------
     solution_path : pathlib.Path | None
-        solution_path parameter value.
+        Path to the solution file.
 
     Returns
     -------
     model.Model
-        Computed return value.
-    """
+        The created model.
 
+    """
     try:
         return create_model(solution_path)
     except NotSupportedModelVersionError as err:
@@ -177,9 +182,9 @@ def create_model_or_exit(solution_path: pathlib.Path | None = None, /) -> model.
 
 
 def resolve_property(model: model.Model, /, reference: PropertyReference) -> list[PropertyValue]:
-    """
-    Lookup and Resolve a single PropertyReference. Useful to resolve properties that are not
-    set directly on the entity, e.g. a property on an attribute.
+    """Look up and resolve a single PropertyReference.
+
+    Useful to resolve properties that are not set directly on the entity, e.g. a property on an attribute.
 
     Parameters
     ----------
@@ -194,6 +199,7 @@ def resolve_property(model: model.Model, /, reference: PropertyReference) -> lis
     list[PropertyValue]
         A list of all properties that are related to the provided reference. The PropertyValue
         includes all custom attributes.
+
     """
     properties: list[PropertyValue] = []
 
@@ -213,16 +219,16 @@ def resolve_property(model: model.Model, /, reference: PropertyReference) -> lis
 
 
 def create_undefined_folders(_model: model.Model, /):
-    """
-    Goes through all model entities and adds folder wrappers for every parent locator
-    of an entity that does not exist yet.
+    """Go through all model entities and add folder wrappers for every parent locator.
 
+    Only adds folders for parent locators that do not exist yet.
     Folder IDs are simply sequential increased during runtime.
 
     Parameters
     ----------
     _model : `model.Model`
         A fully parsed DataM8 folder. Can be run pre or post property resolution.
+
     """
     logger.debug("Create undefined folders")
 

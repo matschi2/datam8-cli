@@ -14,6 +14,8 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
+"""Custom exception types and error utility helpers for DataM8."""
+
 # along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 from collections.abc import Sequence
@@ -27,10 +29,14 @@ from datam8 import config
 
 
 def extract_details(err: Exception) -> tuple[Path, str, int | None, StackSummary]:
-    """
+    """Extract the innermost traceback frame details from an exception.
+
     Returns
     -------
-    A tuple containing the file path, function name, line number and the remaining stack summary
+    tuple[Path, str, int | None, StackSummary]
+        File path, function name, line number, and remaining stack summary.
+        Returns empty/unknown values when no traceback is available.
+
     """
     if err.__traceback__ is None:
         return Path(), "unknown", None, StackSummary()
@@ -50,7 +56,10 @@ def extract_details(err: Exception) -> tuple[Path, str, int | None, StackSummary
 
 
 class PayloadRegisteredMultipleTimesError(Exception):
+    """Raised when the same payload function name is registered more than once."""
+
     def __init__(self, payload_name, /):
+        """Initialize with the duplicate payload name."""
         super().__init__(f"Payload [{payload_name}] already registered.")
 
 
@@ -65,6 +74,8 @@ class ErrorEnvelope(BaseModel):
 
 
 class Datam8Error(Exception):
+    """Base exception for all structured DataM8 errors carrying a code, message, and optional details."""
+
     def __init__(
         self,
         *,
@@ -74,6 +85,7 @@ class Datam8Error(Exception):
         hint: str | None = None,
         exit_code: int = 10,
     ) -> None:
+        """Initialize the error with a structured code and optional contextual information."""
         super().__init__(message)
         self.code = code
         self.message = message
@@ -82,6 +94,7 @@ class Datam8Error(Exception):
         self.exit_code = exit_code
 
     def to_envelope(self, *, trace_id: str | None = None) -> ErrorEnvelope:
+        """Serialise this error into a stable :class:`ErrorEnvelope` for API responses."""
         return ErrorEnvelope(
             code=self.code,
             message=self.message,
@@ -92,13 +105,18 @@ class Datam8Error(Exception):
 
 
 class Datam8NotFoundError(Datam8Error):
+    """Raised when a requested DataM8 resource cannot be located; maps to HTTP 404."""
+
     def __init__(
         self, *, code: str = "not_found", message: str, details: Any = None, hint: str | None = None
     ):
+        """Initialize with exit code 3 and default code `not_found`."""
         super().__init__(code=code, message=message, details=details, hint=hint, exit_code=3)
 
 
 class Datam8ValidationError(Datam8Error):
+    """Raised when user-supplied data fails validation; maps to HTTP 422."""
+
     def __init__(
         self,
         *,
@@ -107,21 +125,26 @@ class Datam8ValidationError(Datam8Error):
         details: Any = None,
         hint: str | None = None,
     ):
+        """Initialize with exit code 2 and default code `validation_error`."""
         super().__init__(code=code, message=message, details=details, hint=hint, exit_code=2)
 
 
 class ModelParseError(Exception):
+    """Raised when one or more model JSON files cannot be parsed; aggregates inner exceptions."""
+
     def __init__(
         self,
         msg="Error(s) occured during model files parsing.",
         inner_exceptions: Sequence[Exception] = [],
     ):
+        """Initialize, optionally collecting multiple inner parse exceptions."""
         Exception.__init__(self, msg)
 
         self.inner_exceptions = inner_exceptions
         self.message = msg
 
     def __str__(self) -> str:
+        """Return string representation."""
         if not self.inner_exceptions:
             return self.message
         details = "\n".join(str(err) for err in self.inner_exceptions)
@@ -129,17 +152,23 @@ class ModelParseError(Exception):
 
 
 class NotSupportedModelVersionError(Exception):
+    """Raised when a solution file declares a schema version that this generator does not support."""
+
     def __init__(self, version: str):
+        """Initialize with the unsupported version string."""
         super().__init__(f"Tried to parse an unsupported model version: {version}")
 
 
 class EntityNotFoundError(Exception):
+    """Raised when a model entity cannot be found by locator, name, or ID."""
+
     def __init__(
         self,
         entity: str,
         msg: str = "Entity was not found in model: {}",
         inner_exceptions: list[Exception] | None = None,
     ):
+        """Initialize with the missing entity identifier and an optional formatted message."""
         Exception.__init__(self, msg.format(entity))
 
         self.inner_exceptions = inner_exceptions
@@ -147,15 +176,24 @@ class EntityNotFoundError(Exception):
 
 
 class InvalidLocatorError(Exception):
+    """Raised when a locator string does not conform to the expected format."""
+
     def __init__(self, locator: str):
+        """Initialize with the invalid locator value."""
         super().__init__(f"Not a valid locator: {locator}")
 
 
 class PropertiesNotResolvedError(Exception):
+    """Raised when properties of a model entity are accessed before they have been resolved."""
+
     def __init__(self, locator):
+        """Initialize with the locator of the unresolved entity."""
         super().__init__(f"Tried to access properties of unresolved entity '{locator}' yet")
 
 
 class InvalidGeneratorTargetError(Exception):
+    """Raised when the requested generator target name is not declared in the solution file."""
+
     def __init__(self, target_name: str):
+        """Initialize with the name of the missing generator target."""
         super().__init__(f"Generator target '{target_name}' is not defined")

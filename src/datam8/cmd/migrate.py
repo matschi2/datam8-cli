@@ -14,6 +14,8 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
+"""CLI sub-commands to migrate datam8 v1 solution models to the v2 format."""
+
 # along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 import pathlib
@@ -44,7 +46,7 @@ def v1_to_v2(
     log_level: opts.LogLevel = opts.LogLevels.WARNING,
     version: opts.Version = False,
 ):
-    """Migrate solution model."""
+    """Migrate a v1 solution to the v2 model layout, writing results to an output directory."""
     common.main_callback(solution_path, log_level, version)
     config.lazy = False
 

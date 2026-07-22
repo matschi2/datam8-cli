@@ -29,9 +29,7 @@ from . import property
 
 
 class Zone(BaseModel):
-    """
-    Defines a high-level layer or zone, typically used to clearly separate different states of data processing, e.g. bronze, silver, gold, semantic.
-    """
+    """Defines a high-level layer or zone, typically used to clearly separate different states of data processing, e.g. bronze, silver, gold, semantic."""
 
     model_config = ConfigDict(
         extra="forbid",
@@ -82,6 +80,7 @@ class Zone(BaseModel):
         ------
         ValidationError
             If the data in the json file does not much the model constraints.
+
         """
         with open(path) as file:
             model = Zone.model_validate_json(file.read())

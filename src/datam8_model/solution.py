@@ -27,9 +27,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 
 class GeneratorTarget(BaseModel):
-    """
-    Defines a target that can be selected when using the generator.
-    """
+    """Defines a target that can be selected when using the generator."""
 
     model_config = ConfigDict(
         extra="forbid",
@@ -73,6 +71,7 @@ class GeneratorTarget(BaseModel):
         ------
         ValidationError
             If the data in the json file does not much the model constraints.
+
         """
         with open(path) as file:
             model = GeneratorTarget.model_validate_json(file.read())
@@ -85,9 +84,7 @@ class GeneratorTarget(BaseModel):
 
 
 class Solution(BaseModel):
-    """
-    A definition to hold various settings for use in the frontend or the generator.
-    """
+    """A definition to hold various settings for use in the frontend or the generator."""
 
     model_config = ConfigDict(
         extra="forbid",
@@ -145,6 +142,7 @@ class Solution(BaseModel):
         ------
         ValidationError
             If the data in the json file does not much the model constraints.
+
         """
         with open(path) as file:
             model = Solution.model_validate_json(file.read())

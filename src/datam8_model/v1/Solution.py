@@ -14,6 +14,8 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
+"""Solution module."""
+
 # along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 
@@ -26,6 +28,8 @@ from pydantic import BaseModel, Field
 
 
 class AreaTypes(BaseModel):
+    """AreaTypes model."""
+
     Raw: str
     Stage: str
     Core: str
@@ -33,15 +37,17 @@ class AreaTypes(BaseModel):
     Diagram: str
 
     def to_dict(self) -> dict:
+        """To dict."""
         return self.model_dump(by_alias=True, exclude_unset=True, mode="json")
 
     @staticmethod
     def from_dict(obj) -> AreaTypes:
+        """From dict."""
         return AreaTypes.model_validate(obj, from_attributes=False)
 
     @staticmethod
     def from_json_file(path: Path) -> AreaTypes:
-        """Loads ands validates a json file from the given path.
+        """Load and validate a JSON file from the given path.
 
         Parameters
         ----------
@@ -57,6 +63,7 @@ class AreaTypes(BaseModel):
         ------
         ValidationError
             If the data in the json file does not much the model constraints.
+
         """
         with open(path) as file:
             model = AreaTypes.model_validate_json(file.read())
@@ -65,6 +72,8 @@ class AreaTypes(BaseModel):
 
 
 class Model(BaseModel):
+    """Model model."""
+
     basePath: str
     rawPath: str
     stagingPath: str
@@ -76,15 +85,17 @@ class Model(BaseModel):
     AreaTypes_1: Annotated[AreaTypes, Field(alias="AreaTypes")]
 
     def to_dict(self) -> dict:
+        """To dict."""
         return self.model_dump(by_alias=True, exclude_unset=True, mode="json")
 
     @staticmethod
     def from_dict(obj) -> Model:
+        """From dict."""
         return Model.model_validate(obj, from_attributes=False)
 
     @staticmethod
     def from_json_file(path: Path) -> Model:
-        """Loads ands validates a json file from the given path.
+        """Load and validate a JSON file from the given path.
 
         Parameters
         ----------
@@ -100,6 +111,7 @@ class Model(BaseModel):
         ------
         ValidationError
             If the data in the json file does not much the model constraints.
+
         """
         with open(path) as file:
             model = Model.model_validate_json(file.read())

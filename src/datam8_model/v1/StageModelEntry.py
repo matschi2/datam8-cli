@@ -14,6 +14,8 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
+"""Stagemodelentry module."""
+
 # along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 
@@ -28,25 +30,31 @@ from pydantic import BaseModel, ConfigDict, Field
 
 
 class Type(Enum):
+    """Type model."""
+
     STAGE = "stage"
 
 
 class Parameter(BaseModel):
+    """Parameter model."""
+
     model_config = ConfigDict(extra="forbid", populate_by_name=True)
     name: str
     value: str
     custom: Mapping[str, Any] | None = None
 
     def to_dict(self) -> dict:
+        """To dict."""
         return self.model_dump(by_alias=True, exclude_unset=True, mode="json")
 
     @staticmethod
     def from_dict(obj) -> Parameter:
+        """From dict."""
         return Parameter.model_validate(obj, from_attributes=False)
 
     @staticmethod
     def from_json_file(path: Path) -> Parameter:
-        """Loads ands validates a json file from the given path.
+        """Load and validate a JSON file from the given path.
 
         Parameters
         ----------
@@ -62,6 +70,7 @@ class Parameter(BaseModel):
         ------
         ValidationError
             If the data in the json file does not much the model constraints.
+
         """
         with open(path) as file:
             model = Parameter.model_validate_json(file.read())
@@ -70,6 +79,8 @@ class Parameter(BaseModel):
 
 
 class Attribute(BaseModel):
+    """Attribute model."""
+
     model_config = ConfigDict(extra="forbid", populate_by_name=True)
     name: str
     type: str
@@ -83,15 +94,17 @@ class Attribute(BaseModel):
     tags: Sequence[str] | None = None
 
     def to_dict(self) -> dict:
+        """To dict."""
         return self.model_dump(by_alias=True, exclude_unset=True, mode="json")
 
     @staticmethod
     def from_dict(obj) -> Attribute:
+        """From dict."""
         return Attribute.model_validate(obj, from_attributes=False)
 
     @staticmethod
     def from_json_file(path: Path) -> Attribute:
-        """Loads ands validates a json file from the given path.
+        """Load and validate a JSON file from the given path.
 
         Parameters
         ----------
@@ -107,6 +120,7 @@ class Attribute(BaseModel):
         ------
         ValidationError
             If the data in the json file does not much the model constraints.
+
         """
         with open(path) as file:
             model = Attribute.model_validate_json(file.read())
@@ -115,20 +129,24 @@ class Attribute(BaseModel):
 
 
 class AttributesMapping(BaseModel):
+    """AttributesMapping model."""
+
     model_config = ConfigDict(extra="forbid", populate_by_name=True)
     source: str
     target: str
 
     def to_dict(self) -> dict:
+        """To dict."""
         return self.model_dump(by_alias=True, exclude_unset=True, mode="json")
 
     @staticmethod
     def from_dict(obj) -> AttributesMapping:
+        """From dict."""
         return AttributesMapping.model_validate(obj, from_attributes=False)
 
     @staticmethod
     def from_json_file(path: Path) -> AttributesMapping:
-        """Loads ands validates a json file from the given path.
+        """Load and validate a JSON file from the given path.
 
         Parameters
         ----------
@@ -144,6 +162,7 @@ class AttributesMapping(BaseModel):
         ------
         ValidationError
             If the data in the json file does not much the model constraints.
+
         """
         with open(path) as file:
             model = AttributesMapping.model_validate_json(file.read())
@@ -152,6 +171,8 @@ class AttributesMapping(BaseModel):
 
 
 class StageEntity(BaseModel):
+    """StageEntity model."""
+
     model_config = ConfigDict(extra="forbid", populate_by_name=True)
     dataModule: str
     dataProduct: str
@@ -164,15 +185,17 @@ class StageEntity(BaseModel):
     attribute: Sequence[Attribute] | None = None
 
     def to_dict(self) -> dict:
+        """To dict."""
         return self.model_dump(by_alias=True, exclude_unset=True, mode="json")
 
     @staticmethod
     def from_dict(obj) -> StageEntity:
+        """From dict."""
         return StageEntity.model_validate(obj, from_attributes=False)
 
     @staticmethod
     def from_json_file(path: Path) -> StageEntity:
-        """Loads ands validates a json file from the given path.
+        """Load and validate a JSON file from the given path.
 
         Parameters
         ----------
@@ -188,6 +211,7 @@ class StageEntity(BaseModel):
         ------
         ValidationError
             If the data in the json file does not much the model constraints.
+
         """
         with open(path) as file:
             model = StageEntity.model_validate_json(file.read())
@@ -196,21 +220,25 @@ class StageEntity(BaseModel):
 
 
 class StageFunction(BaseModel):
+    """StageFunction model."""
+
     model_config = ConfigDict(extra="forbid", populate_by_name=True)
     dataSource: str | None = None
     sourceLocation: str | None = None
     attributeMapping: Sequence[AttributesMapping] | None = None
 
     def to_dict(self) -> dict:
+        """To dict."""
         return self.model_dump(by_alias=True, exclude_unset=True, mode="json")
 
     @staticmethod
     def from_dict(obj) -> StageFunction:
+        """From dict."""
         return StageFunction.model_validate(obj, from_attributes=False)
 
     @staticmethod
     def from_json_file(path: Path) -> StageFunction:
-        """Loads ands validates a json file from the given path.
+        """Load and validate a JSON file from the given path.
 
         Parameters
         ----------
@@ -226,6 +254,7 @@ class StageFunction(BaseModel):
         ------
         ValidationError
             If the data in the json file does not much the model constraints.
+
         """
         with open(path) as file:
             model = StageFunction.model_validate_json(file.read())
@@ -234,6 +263,8 @@ class StageFunction(BaseModel):
 
 
 class Model(BaseModel):
+    """Model model."""
+
     model_config = ConfigDict(extra="forbid", populate_by_name=True)
     field_schema: Annotated[str | None, Field(alias="$schema")] = None
     type: Type
@@ -241,15 +272,17 @@ class Model(BaseModel):
     function: StageFunction | None = None
 
     def to_dict(self) -> dict:
+        """To dict."""
         return self.model_dump(by_alias=True, exclude_unset=True, mode="json")
 
     @staticmethod
     def from_dict(obj) -> Model:
+        """From dict."""
         return Model.model_validate(obj, from_attributes=False)
 
     @staticmethod
     def from_json_file(path: Path) -> Model:
-        """Loads ands validates a json file from the given path.
+        """Load and validate a JSON file from the given path.
 
         Parameters
         ----------
@@ -265,6 +298,7 @@ class Model(BaseModel):
         ------
         ValidationError
             If the data in the json file does not much the model constraints.
+
         """
         with open(path) as file:
             model = Model.model_validate_json(file.read())

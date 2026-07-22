@@ -14,6 +14,8 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
+"""HTTP routes for CRUD operations on DataM8 model entities."""
+
 # along with this program. If not, see <https://www.gnu.org/licenses/>.
 from typing import Annotated, Any
 
@@ -30,9 +32,7 @@ entities_router = APIRouter(prefix="/entities", tags=["entities"])
 
 @entities_router.get("/{locator:path}")
 async def get_entities(locator: str = "/") -> MultiItemResponse[model.EntityWrapperVariant]:
-    """
-    Returns a list of entities based on the given locator. Returns an empty list if none are found.
-    """
+    """Return all entities that match the given locator path, or an empty list when none match."""
     entities = factory.get_model().get_entities(locator)
     return MultiItemResponse.from_list(entities)
 
@@ -41,6 +41,7 @@ async def get_entities(locator: str = "/") -> MultiItemResponse[model.EntityWrap
 async def patch_entity(
     locator: str, patch: dict[str, Any]
 ) -> SingleItemResponse[model.EntityWrapperVariant]:
+    """Apply a partial update to the entity at the given locator and return the updated wrapper."""
     wrapper = factory.get_model().get_entity_by_locator(locator)
     wrapper.update(**patch)
     return SingleItemResponse(item=wrapper)
@@ -48,6 +49,7 @@ async def patch_entity(
 
 @entities_router.delete("/{locator:path}")
 async def delete_entity(locator: str) -> MultiItemResponse[model.Locator]:
+    """Delete the entity (or subtree) at the given locator and return the locators of all removed entities."""
     deleted_locators = factory.get_model().delete_entities(locator)
     return MultiItemResponse.from_list(deleted_locators)
 
@@ -56,11 +58,14 @@ async def delete_entity(locator: str) -> MultiItemResponse[model.Locator]:
 async def create_entity(
     locator: str, body: dict[str, Any]
 ) -> SingleItemResponse[model.EntityWrapper[b.BaseEntityType]]:
+    """Create a new entity at the given locator from the supplied body and return its wrapper."""
     entity = factory.get_model().add_entity(locator, body)
     return SingleItemResponse(item=entity)
 
 
 class CloneEntityBody(BaseModel):
+    """Request body for cloning an entity to a new locator path."""
+
     model_config = ConfigDict(populate_by_name=True)
     locator: str
     new_locator: Annotated[str, Field(alias="newLocator")]
@@ -70,11 +75,14 @@ class CloneEntityBody(BaseModel):
 async def clone_entity(
     body: CloneEntityBody,
 ) -> MultiItemResponse[model.EntityWrapper[b.BaseEntityType]]:
+    """Deep-copy the entity at `locator` to `newLocator` and return the cloned entity wrapper."""
     entity = factory.get_model().clone_entity(body.locator, body.new_locator)
     return MultiItemResponse.from_list([entity])
 
 
 class MoveBody(BaseModel):
+    """Request body for moving entities from one locator path to another."""
+
     model_config = ConfigDict(populate_by_name=True)
     _from: Annotated[str, Field(alias="from")]
     _to: Annotated[str, Field(alias="to")]
@@ -82,5 +90,6 @@ class MoveBody(BaseModel):
 
 @entities_router.post("/move")
 async def move_entities(body: MoveBody) -> MultiItemResponse[model.EntityWrapperVariant]:
+    """Move all entities under `from` to `to` and return the updated entity wrappers."""
     entities = factory.get_model().move_entities(body._from, body._to)
     return MultiItemResponse.from_list(entities)

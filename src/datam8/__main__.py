@@ -14,6 +14,8 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
+"""Entry point for the datam8 CLI when invoked as a Python module."""
+
 # along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 from __future__ import annotations
@@ -22,12 +24,7 @@ from datam8.app import app
 
 
 def main() -> None:
-    """Main.
-
-    Returns
-    -------
-    None
-        Computed return value."""
+    """Invoke the datam8 CLI application."""
     app()
 
 

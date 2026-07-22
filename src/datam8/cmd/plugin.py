@@ -14,6 +14,8 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
+"""CLI sub-commands for inspecting and debugging datam8 plugins."""
+
 # along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 from typing import Annotated
@@ -44,7 +46,7 @@ def list(
     log_level: opts.LogLevel = opts.LogLevels.WARNING,
     version: opts.Version = False,
 ):
-    "List available plugins"
+    """List available plugins."""
     common.main_callback(solution_path, log_level, version)
 
     solution = parser.parse_solution_file(config.solution_path)
@@ -61,7 +63,7 @@ def show(
     log_level: opts.LogLevel = opts.LogLevels.WARNING,
     version: opts.Version = False,
 ):
-    "List available plugins"
+    """Show detail, connection properties and data-type mappings for a specific plugin."""
     common.main_callback(solution_path, log_level, version)
     init_builtin_plugins(plugin_id=plugin_id)
 
@@ -86,7 +88,7 @@ def ui_schema(
     log_level: opts.LogLevel = opts.LogLevels.WARNING,
     version: opts.Version = False,
 ):
-    "Prints the results of the uiSchema capability of a plugin (intended for debugging)"
+    """Print the results of the uiSchema capability of a plugin (intended for debugging)."""
     common.main_callback(solution_path, log_level, version)
     init_builtin_plugins(plugin_id=plugin_id)
 

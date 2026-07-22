@@ -16,25 +16,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-"""
-Utility Module to make working with datam8 models more comfortable in jinja2 templates.
-
-### submodules
-* cache
-* hasher
-
-### functions
-* validate_json_schema
-* read_json
-* coalesce
-* get_locator
-* start_logger
-* is_wsl
-
-### classes
-* JsonFileParseException
-* ColorFormatter
-"""
+"""Shared utility functions and decorators used across CLI commands, the API, and Jinja2 templates."""
 
 import functools
 import os
@@ -55,6 +37,7 @@ logger = logging.getLogger(__name__)
 
 
 def create_error(err: Exception | str, /, status_code: int = 500, exit_code: int = 1) -> Exception:
+    """Create a mode-aware error: raise an HTTP exception in API mode or exit in CLI mode."""
     if config.mode == config.RunMode.API:
         import fastapi
 
@@ -71,6 +54,7 @@ def create_error(err: Exception | str, /, status_code: int = 500, exit_code: int
 
 
 def is_wsl() -> bool:
+    """Return True if the current process is running inside Windows Subsystem for Linux."""
     # if no running on linux, it cannot be wsl
     if platform.system() != "Linux":
         return False
@@ -89,6 +73,7 @@ def emit_result(
     json: bool = False,
     pretty: bool = False,
 ) -> None:
+    """Print command output to stdout, serialising Pydantic models as JSON when requested."""
     if json and models:
         typer.echo("\n".join([model.model_dump_json(indent=4) for model in models]))
         return
@@ -101,20 +86,21 @@ def emit_result(
 
 
 def none_if[T](input: T | None, value: T) -> T | None:
+    """Return None when `input` equals `value`, otherwise return `input` unchanged."""
     if input == value:
         return None
     return input
 
 
 def pascal_to_snake_case(text: str) -> str:
-    """
-    Convert a pascal or camel case string to snake case
+    """Convert a pascal or camel case string to snake case.
 
-    Example
+    Example:
     -------
     * `AttributeTypes.json` to `attribute_types.json`
     * `dataSources.json` to `data_sources.json`
     * `data_types.json` to `data_types.json`
+
     """
     result: list[str] = []
 
@@ -128,19 +114,7 @@ def pascal_to_snake_case(text: str) -> str:
 
 
 def delete_path(path: Path, recursive: bool = False) -> None:
-    """Delete path.
-
-    Parameters
-    ----------
-    path : Path
-        path parameter value.
-    recursive : bool
-        recursive parameter value.
-
-    Returns
-    -------
-    None
-        Computed return value."""
+    """Delete a file or directory, optionally removing all nested contents first."""
     if not path.exists():
         return
 
@@ -159,19 +133,20 @@ def delete_path(path: Path, recursive: bool = False) -> None:
 
 
 def mkdir(path: Path, recursive: bool = False) -> None:
-    """Mkdir but silent, no errors when paths do not exist
+    """Create `path`, silently skipping directories that already exist.
 
     Parameters
     ----------
     path : Path
-        path parameter value.
+        Directory path to create.
     recursive : bool
-        recursive parameter value.
+        When True, create missing parent directories before creating `path`.
 
     Raises
-    -------
-    FileNotFound
-        If a parent does not exist and recursive is set to `False`
+    ------
+    FileNotFoundError
+        If a parent directory does not exist and `recursive` is False.
+
     """
     if not path.parent.exists() and recursive:
         mkdir(path.parent, recursive=recursive)
@@ -181,16 +156,7 @@ def mkdir(path: Path, recursive: bool = False) -> None:
 
 
 def print_progress_async(msg: str):
-    """
-    Decorator to print a progress spinner with a given message while the function executes.
-
-    Runs the Sprinner in an async function.
-
-    Parameters
-    ----------
-    msg : `str`
-        The message to show behind the spinner while the function runs.
-    """
+    """Return a decorator that shows a Rich spinner with `msg` while the wrapped async function runs."""
 
     def decorator_print_progress_async(func):
         @functools.wraps(func)
@@ -217,15 +183,7 @@ def print_progress_async(msg: str):
 
 
 def get_logger(func):
-    """
-    Descorator to refresh the logger object within a package, otherwise
-    settings like log level are not updated based on cli input.
-
-    Parameters
-    ----------
-    func : `Callable`
-        The function to decorate.
-    """
+    """Return a decorator that re-initialises the module logger before each call to pick up CLI log-level changes."""
 
     @functools.wraps(func)
     def wrapper(*args, **kwargs) -> Callable[..., Any]:
@@ -240,23 +198,17 @@ def start_logger(
     log_directory: str = f"{Path(__file__).parents[1]}\\Logs",
     enable_write_log: bool = False,
 ) -> logging.Logger:
-    """Initialize and configure a logger.
+    r"""Return a configured logger, optionally writing output to a file under `log_directory`.
 
     Parameters
     ----------
-    log_name : `str`, optional
-        Name of the logger. Defaults to "template log".
-    log_directory : `str`, optional
-        Directory to store log files. Defaults to f"{Path(__file__).parents[1]}\\Logs".
-    enable_write_log : `bool`, optional
-        Enable writing logs to file. Defaults to False.
-    log_level : `logging.log`, optional
-        Logging level. Defaults to logging.INFO.
+    log_name : str, optional
+        Logger name and base name of the log file.
+    log_directory : str, optional
+        Directory for the log file when `enable_write_log` is True.
+    enable_write_log : bool, optional
+        When True, attach a `FileHandler` that writes to `log_directory`.
 
-    Returns
-    -------
-    logging.Logger
-        Initialized logger object.
     """
     log_path = f"{log_directory}\\{log_name}.log"
 

@@ -14,6 +14,8 @@
 # GNU General Public License for more details.
 #
 # You should have received a copy of the GNU General Public License
+"""HTTP routes for reading the loaded DataM8 solution and its full entity tree."""
+
 # along with this program. If not, see <https://www.gnu.org/licenses/>.
 
 from fastapi import APIRouter
@@ -28,10 +30,13 @@ solution_router = APIRouter(prefix="/solution")
 
 @solution_router.get("")
 async def get_solution() -> s.Solution:
+    """Return the solution metadata of the currently loaded DataM8 model."""
     return factory.get_model().solution
 
 
 class DumpSolutionResponse(BaseModel):
+    """Complete solution dump with all entities partitioned by type (base, model, folder)."""
+
     solution: s.Solution
     base_entities: list[model.EntityWrapperVariant]
     model_entities: list[model.EntityWrapperVariant]
@@ -40,6 +45,7 @@ class DumpSolutionResponse(BaseModel):
 
 @solution_router.get("/full")
 async def get_full_solution() -> DumpSolutionResponse:
+    """Return the solution together with all entities grouped into base, model, and folder categories."""
     model = factory.get_model()
     base_entities, model_entities, folder_entities = [], [], []
 

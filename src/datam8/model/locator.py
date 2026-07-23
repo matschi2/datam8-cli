@@ -27,6 +27,11 @@ from datam8 import errors, utils
 from datam8_model import base as b
 from datam8_model import model as m
 
+__all__ = [
+    "LocatorOrString",
+    "Locator",
+]
+
 type LocatorOrString = Locator | str
 
 

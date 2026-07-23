@@ -16,31 +16,40 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <https://www.gnu.org/licenses/>.
 
-import os
 import pathlib
 
-import datamodel_code_generator as dcg
 from hatchling.builders.hooks.plugin import interface
 
 
-class GenerateDatamodelHook(interface.BuildHookInterface):
-    PLUGIN_NAME = "generate_datamodel"
+class BuildHook(interface.BuildHookInterface):
+    PLUGIN_NAME = "build"
     CRLF = b"\r\n"
     LF = b"\n"
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        work_dir = pathlib.Path.cwd().absolute()
-        self.__schema_dir = pathlib.Path(".") / "datam8-model" / "schema"
-        self.__output_dir = work_dir / "src" / "datam8_model"
-        self.__template_dir = work_dir / "template"
+        self.__work_dir = pathlib.Path(self.root)
+        self.__schema_dir = self.__work_dir / "datam8-model" / "schema"
+        self.__model_dir = self.__work_dir / "src" / "datam8_model"
+        self.__template_dir = self.__work_dir / "template"
+        self.__src_dir = self.__work_dir / "src"
+        self.__dist_dir = self.__work_dir / "dist"
 
     def initialize(self, version, build_data):
+        self.generate_datamodel()
+        self.convert_crlf_to_lf()
+
+    def generate_datamodel(self):
+        """Generate the common data model from `datam8_model`."""
+        import datamodel_code_generator as dcg
+
+        print(f"Generating datamodel to /{self.__model_dir.relative_to(self.__work_dir)} ...")
+
         dcg.generate(
             input_=self.__schema_dir,
             input_file_type=dcg.InputFileType.JsonSchema,
-            output=self.__output_dir,
+            output=self.__model_dir,
             output_model_type=dcg.DataModelType.PydanticV2BaseModel,
             output_datetime_class=dcg.DatetimeClassType.Awaredatetime,
             target_python_version=dcg.PythonVersion.PY_312,
@@ -63,16 +72,11 @@ class GenerateDatamodelHook(interface.BuildHookInterface):
             custom_file_header_path=pathlib.Path("./license_file_header.txt"),
         )
 
-        # self.prepend_license_to_files()
-
-        self.convert_crlf_to_lf()
-
-    def clean(self, versions):
-        for file in self.__output_dir.glob("*.py"):
-            os.remove(file)
-
     def convert_crlf_to_lf(self):
-        for file in self.__output_dir.glob("**/*.py"):
+        """Convert CRLF to LF to ensure consistency across dev environments."""
+        print("Converting line endings...")
+
+        for file in self.__model_dir.glob("**/*.py"):
             with open(file, "rb") as f:
                 content = f.read()
 

@@ -44,6 +44,8 @@ from .locator import ROOT_LOCATOR, Locator, LocatorOrString, _ensure_locator
 
 logger = logging.getLogger(__name__)
 
+__all__ = ["MODEL_DUMP_OPTIONS", "class_from_type", "PropertyReference", "Model", "EntityFileRef"]
+
 MODEL_DUMP_OPTIONS: dict[str, Any] = {
     "indent": 2,
     "exclude_defaults": True,

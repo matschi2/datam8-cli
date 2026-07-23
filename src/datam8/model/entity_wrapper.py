@@ -43,6 +43,14 @@ from .locator import Locator, LocatorOrString, _ensure_locator
 
 logger = logging.getLogger(__name__)
 
+__all__ = [
+    "BaseEntityDict",
+    "EntityDict",
+    "EntityWrapper",
+    "EntityRepository",
+    "IModel",
+]
+
 type BaseEntityDict[T: b.BaseEntityType] = dict[b.EntityType, list[T]]
 type EntityDict[T: b.BaseEntityType] = dict[Locator, EntityWrapper[T]]
 

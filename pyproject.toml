@@ -16,6 +16,7 @@ dependencies = [
   "typer~=0.19.0",
   "keyring~=25.6.0",
   "keyrings-cryptfile~=1.3.9",
+  "deepdiff==8.6.2",
   # connecting stuff
   "polars~=1.39.0",
   "pyarrow~=23.0.0",
@@ -30,7 +31,7 @@ azure = [
 ]
 api = [
   "uvicorn~=0.40.0",
-  "fastapi~=0.128.0",
+  "fastapi~=0.139.0",
 ]
 sql = [
   "connectorx~=0.4.0",
@@ -51,7 +52,8 @@ dev = [
   "hatchling~=1.27.0",
   "httpx~=0.25.0",
   "bandit~=1.9.0",
-  "deepdiff==8.6.2",
+  "datamodel-code-generator~=0.33.0",
+  "pdoc~=16.0.0",
 ]
 
 [build-system]
@@ -82,7 +84,6 @@ quote-style = "double"
 packages = ["src/datam8", "src/datam8_model"]
 
 [tool.hatch.build.hooks.custom]
-path = "hatch_build_datamodel.py"
 dependencies = [
   "datamodel-code-generator~=0.33.0",
   "ruff~=0.15.0",

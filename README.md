@@ -65,8 +65,8 @@ uv run pytest --solution-path "<path-to-solution.dm8s>"
 ### Linting / checks
 
 ```sh
-uv tool run ruff check src
-uv tool run pyright src
+uvx run ruff check src
+uvx run ty src
 ```
 
 ### License headers
@@ -74,4 +74,20 @@ uv tool run pyright src
 ```sh
 uv run python scripts/add_license_headers.py --dry-run
 uv run python scripts/add_license_headers.py
+```
+
+### API Documentation
+
+A `build_docs.py` script is provided under `docs` to build an API documentation with pdoc at
+`dist/docs`
+
+```sh
+uv run -s docs/build.py
+```
+
+To run a simple local webserver to test the generated documentation, pdoc can be run directly via
+uv.
+
+```sh
+uv run pdoc src/* -p 8080
 ```

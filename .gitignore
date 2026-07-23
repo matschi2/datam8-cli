@@ -21,3 +21,6 @@ wheels/
 
 # pycoverage results
 .coverage
+
+# generated docs
+site

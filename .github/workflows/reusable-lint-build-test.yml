@@ -22,11 +22,14 @@ jobs:
       - name: Set up environment
         uses: ./.github/actions/setup-environment
         with:
-          uv_version: "0.11.0"
+          uv_version: "0.11"
           python_version_file: ".python-version"
 
-      - name: Run ruff lint check
-        run: uvx ruff check . --respect-gitignore --exclude datam8-model/
+      - name: Run ruff lint check src
+        run: uvx ruff check src/datam8 --respect-gitignore
+
+      - name: Run ruff lint check tests
+        run: uvx ruff check tests --respect-gitignore --ignore D
 
       - name: Install dependencies
         run: uv sync --all-extras

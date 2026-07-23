@@ -56,7 +56,6 @@ def test_lookup_entity__valid(locator: str, model: Model):
 @pytest_cases.parametrize_with_cases("locator", cases=CasesLocator, glob="*_invalid")
 def test_lookup_entity__invalid(locator: str, model: Model):
     """Test the Model().lookup_entity() function with an invalid locator as an input."""
-
     with pytest.raises(errors.InvalidLocatorError):
         model.get_entity_by_locator(locator)
 
